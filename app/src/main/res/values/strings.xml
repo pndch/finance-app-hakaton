@@ -2,4 +2,5 @@
     <string name="app_name">finance-app</string>
     <string name="title_activity_title_screen">TitleScreenActivity</string>
     <string name="title_activity_character_design">CharacterDesignActivity</string>
+    <string name="title_activity_adult">AdultActivity</string>
 </resources>

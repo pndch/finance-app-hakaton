@@ -1,5 +1,6 @@
 package furrylovers.finance_app
 
+import android.R
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -63,10 +64,13 @@ fun MainScreen() { //потом поменять название надо бу�
         Button(
             onClick = {
                 //всплывающее сообщение Toast.makeText(context, "Кнопка нажата!", Toast.LENGTH_SHORT).show()
+                var character = Data()
+                character.petName = characterName
+                DoJson(context).saveData(character)
                 context.startActivity(Intent(context, CharacterDesignActivity::class.java))
             }
         ) {
-            Text(text = "Сохранить")
+            Text(text = "Сохранить и продолжить")
         }
     }
 }
