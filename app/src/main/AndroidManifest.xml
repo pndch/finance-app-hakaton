@@ -21,6 +21,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".TitleScreenActivity"
+            android:exported="false"
+            android:label="@string/title_activity_title_screen"
+            android:theme="@style/Theme.Financeapp"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
