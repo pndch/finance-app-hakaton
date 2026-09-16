@@ -20,15 +20,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import furrylovers.finance_app.ui.theme.FinanceappTheme
+import furrylovers.finance_app.ui.theme.MainTheme
 
-class TitleScreenActivity : ComponentActivity() {
+class TitleScreenActivity : ComponentActivity() { //точка входа 2
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            FinanceappTheme {
-                FinanceappApp()
+            MainTheme() {
+                MainMenu()
             }
         }
     }
@@ -36,8 +36,8 @@ class TitleScreenActivity : ComponentActivity() {
 
 //@PreviewScreenSizes
 @Composable
-fun FinanceappApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+fun MainMenu() {
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.PROFILE) } //выбор по умолчанию
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -56,22 +56,29 @@ fun FinanceappApp() {
             }
         }
     ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = "Android",
-                modifier = Modifier.padding(innerPadding)
-            )
+        when (currentDestination) {
+            //тут прописываются действия при нажатии на кнопки снизу
+            //тут по идее будем включать функции которые будут выводить целые боксы
+            //на экран и там кнопки всякие уже будут и тд
+            AppDestinations.HOME -> Greeting(name = AppDestinations.HOME.label)
+            AppDestinations.FAVORITES -> Greeting(name = AppDestinations.FAVORITES.label)
+            AppDestinations.PROFILE -> Greeting(name = AppDestinations.PROFILE.label)
+            AppDestinations.SHOP -> Greeting(name = AppDestinations.SHOP.label)
+            AppDestinations.MINIGAMES -> Greeting(name = AppDestinations.MINIGAMES.label)
         }
     }
 }
 
-enum class AppDestinations(
+enum class AppDestinations( //кнопки внизу экрана
     val label: String,
     val icon: Int,
 ) {
+    //нужно будет подумать над тем чо куда пихать
     HOME("Home", R.drawable.ic_home),
-    FAVORITES("Favorites", R.drawable.ic_favorite),
+    FAVORITES("Бюджет", R.drawable.ic_favorite),
     PROFILE("Profile", R.drawable.ic_account_box),
+    SHOP("Shop", R.drawable.ic_favorite),
+    MINIGAMES("MiniGames", R.drawable.ic_favorite),
     //вот все эти ебучие R.drawable лежат в папке ./res/drawable и надо сделать будет нормальные иконки и тут их поменять
 }
 
@@ -85,6 +92,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    FinanceappApp()
+fun MainMenuPreview() {
+    MainMenu()
 }
