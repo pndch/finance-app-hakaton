@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() { //точка входа в прогр
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // !json.empty()
             MainScreen() //весь UI запускается отсюда
         }
     }

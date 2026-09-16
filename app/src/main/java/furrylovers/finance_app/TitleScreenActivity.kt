@@ -7,9 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,10 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,19 +40,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import furrylovers.finance_app.ui.theme.MainTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.time.delay
 import kotlin.random.Random
 
 class TitleScreenActivity : ComponentActivity() { //точка входа 2
@@ -73,6 +75,7 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
 @Composable
 fun MainMenu() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    var liquidProgress by rememberSaveable { mutableStateOf(0.4f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -87,17 +90,34 @@ fun MainMenu() {
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxSize()
-                .padding(bottom= 140.dp)
+                .padding(bottom= 30.dp)
         )
-
 
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 15.dp),
+                .padding(bottom = 40.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
+        ) {
+            Parameters.entries.forEachIndexed { index, destination ->
+                LiquidCircleProgress(
+                    progress = liquidProgress,
+                    modifier = Modifier.size(110.dp)
+                        .padding(top = 30.dp, start = 20.dp)
+                )
+            }
+        }
+
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 335.dp, top = 20.dp)
+                .fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceEvenly,
+//            verticalAlignment = Alignment.CenterVertically
         ) {
             AppDestinations.entries.forEachIndexed { index, destination ->
                 BubbleButton(
@@ -110,6 +130,48 @@ fun MainMenu() {
         }
     }
 }
+
+@Composable
+fun LiquidCircleProgress(
+    progress: Float,              // 0f..1f
+    modifier: Modifier = Modifier,
+    fillColor: Color = Color(0xFF4CAF50),
+    strokeColor: Color = Color(0xFF388E3C),
+    strokeWidth: Dp = 4.dp,
+    animate: Boolean = true
+) {
+    val animated by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = if (animate) 600 else 0),
+        label = "liquidProgress"
+    )
+
+    Canvas(modifier = modifier.aspectRatio(1f)) {
+        val strokePx = strokeWidth.toPx()
+        val radius = (size.minDimension - strokePx) / 2f
+        val center = Offset(size.width / 2f, size.height / 2f)
+
+
+        clipPath(Path().apply { addOval(Rect(center, radius)) }) {
+            val fillHeight = radius * 2f * animated
+            val topLeftY = center.y + radius - fillHeight   // старт от нижней точки
+            drawRect(
+                color = fillColor,
+                topLeft = Offset(center.x - radius, topLeftY),
+                size = Size(radius * 2f, fillHeight)
+            )
+        }
+
+        // 3. Обводка круга
+        drawCircle(
+            color = strokeColor,
+            radius = radius,
+            center = center,
+            style = Stroke(width = strokePx)
+        )
+    }
+}
+
 
 @Composable
 fun CharacterLayer(modifier: Modifier = Modifier) {
@@ -212,6 +274,16 @@ fun BubbleButton(
         )
     }
 }
+
+enum class Parameters( //кнопки внизу экрана
+    val label: String,
+    val icon: Int,
+) {
+    HAPPINESS("Счастье", R.drawable.ic_favorite),
+    FULLNESS("Сытость", R.drawable.ic_favorite),
+    GROOMED("Ухоженность", R.drawable.ic_favorite),
+}
+
 
 enum class AppDestinations( //кнопки внизу экрана
     val label: String,
