@@ -117,23 +117,6 @@ fun MainMenu() {
             }
         }
 
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 335.dp, top = 20.dp)
-                .fillMaxWidth(),
-
-        ) {
-            AppDestinations.entries.forEachIndexed { index, destination ->
-                BubbleButton(
-                    destination = destination,
-                    selected = destination == currentDestination,
-                    onClick = { currentDestination = destination },
-                    index = index
-                )
-            }
-        }
     }
 }
 
@@ -248,63 +231,6 @@ fun CharacterLayer(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun BubbleButton(
-    destination: AppDestinations,
-    selected: Boolean,
-    onClick: () -> Unit,
-    index: Int
-) {
-    val transition = rememberInfiniteTransition(label = "bubble_$index")
-
-    // разные фазы плавания за счёт разных длительностей
-    val durationMillis = 2200 + index * 400
-
-    val offsetY by transition.animateFloat(
-        initialValue = -10f,
-        targetValue = 10f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = durationMillis, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "float_$index"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .clickable { onClick() }
-            .padding(6.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .graphicsLayer { translationY = offsetY }
-                .clip(CircleShape)
-                .background(
-                    if (selected) Color.White.copy(alpha = 0.35f)
-                    else Color.White.copy(alpha = 0.15f)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(destination.icon),
-                contentDescription = destination.label,
-                tint = if (selected) Color.White else Color.White.copy(alpha = 0.85f),
-                modifier = Modifier.size(28.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = destination.label,
-            color = if (selected) Color.White else Color.White.copy(alpha = 0.7f),
-            fontSize = 12.sp
-        )
-    }
-}
 
 enum class Parameters( //кнопки внизу экрана
     val label: String,
