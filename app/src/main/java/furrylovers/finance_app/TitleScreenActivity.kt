@@ -101,10 +101,13 @@ fun MainMenu() {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Parameters.entries.forEachIndexed { index, destination ->
+            Parameters.entries.forEachIndexed { index, parametres ->
                 LiquidCircleProgress(
+                    index = index,
+                    fillColor = parametres.color,
+                    strokeColor = parametres.strokeColor,
                     progress = liquidProgress,
-                    modifier = Modifier.size(110.dp)
+                    modifier = Modifier.size(90.dp)
                         .padding(top = 30.dp, start = 20.dp)
                 )
             }
@@ -133,11 +136,12 @@ fun MainMenu() {
 
 @Composable
 fun LiquidCircleProgress(
+    index: Int,
     progress: Float,              // 0f..1f
     modifier: Modifier = Modifier,
-    fillColor: Color = Color(0xFF4CAF50),
-    strokeColor: Color = Color(0xFF388E3C),
-    strokeWidth: Dp = 4.dp,
+    fillColor: Color,
+    strokeColor: Color,
+    strokeWidth: Dp = 6.dp,
     animate: Boolean = true
 ) {
     val animated by animateFloatAsState(
@@ -146,7 +150,22 @@ fun LiquidCircleProgress(
         label = "liquidProgress"
     )
 
-    Canvas(modifier = modifier.aspectRatio(1f)) {
+    val transition = rememberInfiniteTransition(label = "bubble_$index")
+
+    // разные фазы плавания за счёт разных длительностей
+    val durationMillis = 2200 + index * 400
+
+    val offsetY by transition.animateFloat(
+        initialValue = -15f,
+        targetValue = 15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = durationMillis, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float_$index"
+    )
+
+    Canvas(modifier = modifier.aspectRatio(1f).graphicsLayer(translationY = offsetY)) {
         val strokePx = strokeWidth.toPx()
         val radius = (size.minDimension - strokePx) / 2f
         val center = Offset(size.width / 2f, size.height / 2f)
@@ -278,10 +297,26 @@ fun BubbleButton(
 enum class Parameters( //кнопки внизу экрана
     val label: String,
     val icon: Int,
+    val color: Color,
+    val strokeColor: Color
 ) {
-    HAPPINESS("Счастье", R.drawable.ic_favorite),
-    FULLNESS("Сытость", R.drawable.ic_favorite),
-    GROOMED("Ухоженность", R.drawable.ic_favorite),
+    HAPPINESS("Счастье",
+        R.drawable.ic_favorite,
+        color = Color(0xFFFF6B9D),        // заливка
+        // обводка:
+         strokeColor = Color(0xFFD6336C)
+    ),
+    FULLNESS("Сытость",
+        R.drawable.ic_favorite,
+        color = Color(0xFFFFA94D),
+         strokeColor = Color(0xFFD97A1F)
+    ),
+    GROOMED("Ухоженность",
+        R.drawable.ic_favorite,
+        color = Color(0xFF4ECDC4),
+         strokeColor = Color(0xFF2E9E96)
+    ),
+
 }
 
 
