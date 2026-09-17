@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -101,11 +103,10 @@ fun MainMenu() {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Parameters.entries.forEachIndexed { index, parametres ->
+            Parameters.entries.forEachIndexed { index, parameters ->
                 LiquidCircleProgress(
                     index = index,
-                    fillColor = parametres.color,
-                    strokeColor = parametres.strokeColor,
+                    parameters = parameters,
                     progress = liquidProgress,
                     modifier = Modifier.size(90.dp)
                         .padding(top = 30.dp, start = 20.dp)
@@ -136,11 +137,12 @@ fun MainMenu() {
 
 @Composable
 fun LiquidCircleProgress(
+    parameters: Parameters,
     index: Int,
-    progress: Float,              // 0f..1f
+    progress: Float,
     modifier: Modifier = Modifier,
-    fillColor: Color,
-    strokeColor: Color,
+    fillColor: Color = parameters.color,
+    strokeColor: Color = parameters.strokeColor,
     strokeWidth: Dp = 6.dp,
     animate: Boolean = true
 ) {
@@ -151,13 +153,10 @@ fun LiquidCircleProgress(
     )
 
     val transition = rememberInfiniteTransition(label = "bubble_$index")
-
-    // разные фазы плавания за счёт разных длительностей
     val durationMillis = 2200 + index * 400
-
     val offsetY by transition.animateFloat(
-        initialValue = -15f,
-        targetValue = 15f,
+        initialValue = -10f,
+        targetValue = 10f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = durationMillis, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
@@ -165,28 +164,39 @@ fun LiquidCircleProgress(
         label = "float_$index"
     )
 
-    Canvas(modifier = modifier.aspectRatio(1f).graphicsLayer(translationY = offsetY)) {
-        val strokePx = strokeWidth.toPx()
-        val radius = (size.minDimension - strokePx) / 2f
-        val center = Offset(size.width / 2f, size.height / 2f)
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .graphicsLayer { translationY = offsetY },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokePx = strokeWidth.toPx()
+            val radius = (size.minDimension - strokePx) / 2f
+            val center = Offset(size.width / 2f, size.height / 2f)
 
+            clipPath(Path().apply { addOval(Rect(center, radius)) }) {
+                val fillHeight = radius * 2f * animated
+                val topLeftY = center.y + radius - fillHeight
+                drawRect(
+                    color = fillColor,
+                    topLeft = Offset(center.x - radius, topLeftY),
+                    size = Size(radius * 2f, fillHeight)
+                )
+            }
 
-        clipPath(Path().apply { addOval(Rect(center, radius)) }) {
-            val fillHeight = radius * 2f * animated
-            val topLeftY = center.y + radius - fillHeight   // старт от нижней точки
-            drawRect(
-                color = fillColor,
-                topLeft = Offset(center.x - radius, topLeftY),
-                size = Size(radius * 2f, fillHeight)
+            drawCircle(
+                color = strokeColor,
+                radius = radius,
+                center = center,
+                style = Stroke(width = strokePx)
             )
         }
 
-        // 3. Обводка круга
-        drawCircle(
-            color = strokeColor,
-            radius = radius,
-            center = center,
-            style = Stroke(width = strokePx)
+        Icon(
+            painter = painterResource(parameters.icon),
+            contentDescription = parameters.label,
+            modifier = Modifier.size(28.dp)
         )
     }
 }
@@ -302,8 +312,7 @@ enum class Parameters( //кнопки внизу экрана
 ) {
     HAPPINESS("Счастье",
         R.drawable.ic_favorite,
-        color = Color(0xFFFF6B9D),        // заливка
-        // обводка:
+        color = Color(0xFFFF6B9D),
          strokeColor = Color(0xFFD6336C)
     ),
     FULLNESS("Сытость",
@@ -311,7 +320,7 @@ enum class Parameters( //кнопки внизу экрана
         color = Color(0xFFFFA94D),
          strokeColor = Color(0xFFD97A1F)
     ),
-    GROOMED("Ухоженность",
+    GROOMED("Уход",
         R.drawable.ic_favorite,
         color = Color(0xFF4ECDC4),
          strokeColor = Color(0xFF2E9E96)
