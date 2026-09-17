@@ -1,5 +1,6 @@
 package furrylovers.finance_app
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -41,6 +42,8 @@ class MainActivity : ComponentActivity() { //точка входа в прогр
 fun MainScreen() { //потом поменять название надо будет на что то осмысленное
     val context = LocalContext.current
     var characterName by rememberSaveable { mutableStateOf("") }
+    val activity = context as? Activity
+
 
     Column( // элементы друг под другом Еще есть Row
         modifier = Modifier
@@ -65,6 +68,8 @@ fun MainScreen() { //потом поменять название надо бу�
             onClick = {
                 //всплывающее сообщение Toast.makeText(context, "Кнопка нажата!", Toast.LENGTH_SHORT).show()
                 context.startActivity(Intent(context, CharacterDesignActivity::class.java))
+                activity?.finish()
+
             }
         ) {
             Text(text = "Сохранить")

@@ -65,6 +65,9 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         window.setBackgroundDrawableResource(android.R.color.transparent)
+
+
+
         setContent {
             MainTheme() {
                 MainMenu()
@@ -120,8 +123,7 @@ fun MainMenu() {
                 .align(Alignment.TopStart)
                 .padding(start = 335.dp, top = 20.dp)
                 .fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceEvenly,
-//            verticalAlignment = Alignment.CenterVertically
+
         ) {
             AppDestinations.entries.forEachIndexed { index, destination ->
                 BubbleButton(

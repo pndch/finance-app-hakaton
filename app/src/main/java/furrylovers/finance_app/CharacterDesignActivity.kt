@@ -1,5 +1,6 @@
 package furrylovers.finance_app
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,6 +39,7 @@ class CharacterDesignActivity : ComponentActivity() {
 @Composable
 fun CharacterDesign() {
     val context = LocalContext.current
+    val activity = context as? Activity
 
     Row(
         modifier = Modifier
@@ -78,6 +80,8 @@ fun CharacterDesign() {
 
             onClick = {
                 context.startActivity(Intent(context, TitleScreenActivity::class.java))
+                activity?.finish()
+
             }
         ) {
             Text(text = "Сохранить")
