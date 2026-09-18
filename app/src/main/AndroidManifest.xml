@@ -33,6 +33,12 @@
             android:label="@string/title_activity_character_design"
             android:theme="@style/Theme.Financeapp"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".AdultActivity"
+            android:exported="false"
+            android:label="@string/title_activity_adult"
+            android:theme="@style/Theme.Financeapp"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
