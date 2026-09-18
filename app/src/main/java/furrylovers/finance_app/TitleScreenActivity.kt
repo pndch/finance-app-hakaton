@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -79,23 +80,95 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
 //@PreviewScreenSizes
 @Composable
 fun MainMenu() {
+    // Текущий экран приложения: HOME, FAVORITES, SHOP, MINIGAMES
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
-    var liquidProgress by rememberSaveable { mutableStateOf(0.4f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+        // ── Общий фон для всех экранов ──
         Image(
             painter = painterResource(R.drawable.background),
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+
+        // ── Переключение основного контента в зависимости от выбранной вкладки ──
+        when (currentDestination) {
+
+            AppDestinations.SHOP -> {
+                // Экран магазина: своя вкладка, свой скролл, свой баланс
+                ShopScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding() // чтобы верхняя плашка не уезжала под статус-бар
+                )
+            }
+
+            else -> {
+                // HOME и пока-что-заглушки для Бюджета / Мини-игр
+                HomeContent()
+            }
+        }
+
+        // ── Навигация: в магазине — снизу горизонтально, в остальных экранах — справа сверху ──
+        if (currentDestination == AppDestinations.SHOP) {
+
+            // Нижняя горизонтальная панель навигации (только для магазина)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppDestinations.entries.forEachIndexed { index, destination ->
+                    BubbleButton(
+                        destination = destination,
+                        selected = destination == currentDestination,
+                        onClick = { currentDestination = destination },
+                        index = index
+                    )
+                }
+            }
+        } else {
+
+            // Верхнее вертикальное меню навигации (для всех остальных экранов)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = 12.dp, top = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AppDestinations.entries.forEachIndexed { index, destination ->
+                    BubbleButton(
+                        destination = destination,
+                        selected = destination == currentDestination,
+                        onClick = { currentDestination = destination },
+                        index = index
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Домашний экран: персонаж по центру + три кружка-стата снизу.
+ * Всё, что раньше было внутри MainMenu(), кроме навигации и фона.
+ */
+@Composable
+private fun HomeContent() {
+    var liquidProgress by rememberSaveable { mutableStateOf(0.4f) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
 
         CharacterLayer(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxSize()
-                .padding(bottom= 30.dp)
+                .padding(bottom = 30.dp)
         )
 
         Row(
@@ -111,12 +184,12 @@ fun MainMenu() {
                     index = index,
                     parameters = parameters,
                     progress = liquidProgress,
-                    modifier = Modifier.size(90.dp)
+                    modifier = Modifier
+                        .size(110.dp)
                         .padding(top = 30.dp, start = 20.dp)
                 )
             }
         }
-
     }
 }
 
@@ -175,6 +248,14 @@ fun LiquidCircleProgress(
                 radius = radius,
                 center = center,
                 style = Stroke(width = strokePx)
+
+        clipPath(Path().apply { addOval(Rect(center, radius)) }) {
+            val fillHeight = radius * 2f * animated
+            val topLeftY = center.y + radius - fillHeight   // старт от нижней точки
+            drawRect(
+                color = fillColor,
+                topLeft = Offset(center.x - radius, topLeftY),
+                size = Size(radius * 2f, fillHeight)
             )
         }
 
@@ -186,27 +267,21 @@ fun LiquidCircleProgress(
     }
 }
 
-
 @Composable
 fun CharacterLayer(modifier: Modifier = Modifier) {
     // ── МЕСТО 1: базовое «дыхание» (постоянная лёгкая анимация) ──
-    // тут можно завести rememberInfiniteTransition для idle-покачивания,
-    // например scale 1f ↔ 1.02f или translationY -2f ↔ 2f
     val idleTransition = rememberInfiniteTransition(label = "char_idle")
     // val idleScale by idleTransition.animateFloat(...)
 
     // ── МЕСТО 2: триггер случайной эмоции/действия раз в 8–15 сек ──
-    // тут заводим переменную, которая переключается по таймеру
     var actionTrigger by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         while (true) {
-            // случайная пауза 8000..15000 мс
             val delayMs = Random.nextLong(8_000L, 15_000L)
             delay(delayMs)
 
             // ── МЕСТО 2а: тут выбираем, какое действие проиграть ──
-            // например: actionTrigger = Random.nextInt(0, 3)
             actionTrigger++
         }
     }
@@ -219,18 +294,72 @@ fun CharacterLayer(modifier: Modifier = Modifier) {
             painter = painterResource(R.drawable.character), // ← твоя картинка персонажа
             contentDescription = null,
             modifier = Modifier
-                .size(620.dp)
+                .size(620.dp),
 
             // ── МЕСТО 1а: сюда вешаем idle-трансформации ──
-            // .graphicsLayer { scaleX = idleScale; scaleY = idleScale }
             // ── МЕСТО 2б: сюда вешаем трансформации по actionTrigger ──
-            // .graphicsLayer { rotationZ = actionRotation }
-            ,
             contentScale = ContentScale.Fit
         )
     }
 }
 
+@Composable
+fun BubbleButton(
+    destination: AppDestinations,
+    selected: Boolean,
+    onClick: () -> Unit,
+    index: Int
+) {
+    val transition = rememberInfiniteTransition(label = "bubble_$index")
+
+    // разные фазы плавания за счёт разных длительностей
+    val durationMillis = 2200 + index * 400
+
+    val offsetY by transition.animateFloat(
+        initialValue = -10f,
+        targetValue = 10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = durationMillis, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float_$index"
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .clickable { onClick() }
+            .padding(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .graphicsLayer { translationY = offsetY }
+                .clip(CircleShape)
+                .background(
+                    if (selected) Color.White.copy(alpha = 0.35f)
+                    else Color.White.copy(alpha = 0.15f)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(destination.icon),
+                contentDescription = destination.label,
+                tint = if (selected) Color.Black else Color.Black.copy(alpha = 0.85f),
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = destination.label,
+            color = if (selected) Color.Black else Color.Black.copy(alpha = 0.7f),
+            fontSize = 12.sp
+        )
+    }
+}
 
 enum class Parameters( //кнопки внизу экрана
     val label: String,
@@ -256,8 +385,7 @@ enum class Parameters( //кнопки внизу экрана
 
 }
 
-
-enum class AppDestinations( //кнопки внизу экрана
+enum class AppDestinations( //кнопки навигации в боковом меню
     val label: String,
     val icon: Int,
 ) {
@@ -265,7 +393,6 @@ enum class AppDestinations( //кнопки внизу экрана
     FAVORITES("Бюджет", R.drawable.ic_favorite),
     SHOP("Shop", R.drawable.ic_favorite),
     MINIGAMES("MiniGames", R.drawable.ic_favorite),
-
 }
 
 @Preview(showBackground = true)
