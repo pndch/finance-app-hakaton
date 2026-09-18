@@ -248,14 +248,6 @@ fun LiquidCircleProgress(
                 radius = radius,
                 center = center,
                 style = Stroke(width = strokePx)
-
-        clipPath(Path().apply { addOval(Rect(center, radius)) }) {
-            val fillHeight = radius * 2f * animated
-            val topLeftY = center.y + radius - fillHeight   // старт от нижней точки
-            drawRect(
-                color = fillColor,
-                topLeft = Offset(center.x - radius, topLeftY),
-                size = Size(radius * 2f, fillHeight)
             )
         }
 

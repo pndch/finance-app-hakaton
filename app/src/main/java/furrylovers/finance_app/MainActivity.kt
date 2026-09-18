@@ -1,7 +1,6 @@
 package furrylovers.finance_app
 
 import android.app.Activity
-import android.R
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
