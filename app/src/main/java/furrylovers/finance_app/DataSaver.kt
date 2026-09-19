@@ -12,7 +12,7 @@ data class Data(
     var petName: String = "PetName",
     var petType: Byte = 1,
     var petStage: Int = 1,
-    var petNeeds: MutableList<Int> = mutableListOf(0,0,0), //Food, Care, Mood
+    var petNeeds: MutableList<Int> = mutableListOf(50,50,50), //Food, Care, Mood
 
     var money: Int = 500, //базовое кол-во
     var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0,0,0,0,0) //вписать сюда чо тут есть я хз
@@ -85,8 +85,17 @@ class DoJson(private val context: Context) { //переименовать как
     }
 
     fun loadData(): Data {
-        val restoredData = json.decodeFromString<Data>(path.readText())
-        return restoredData
+        try {
+            if (path.exists()) {
+                return json.decodeFromString<Data>(path.readText())
+            } else {
+                DoJson(context).saveData(Data())
+                return json.decodeFromString<Data>(path.readText())
+            }
+        } catch (e: Exception) {
+            DoJson(context).saveData(Data())
+            return json.decodeFromString<Data>(path.readText())
+        }
     }
 
     //использовать только для отладки / демонстрации проекта

@@ -1,6 +1,8 @@
 package furrylovers.finance_app
 
+import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +17,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +28,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -35,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,14 +58,20 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import furrylovers.finance_app.ui.theme.MainTheme
 import kotlinx.coroutines.delay
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class TitleScreenActivity : ComponentActivity() { //точка входа 2
@@ -74,11 +87,12 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
     }
 }
 
+
 //@PreviewScreenSizes
 @Composable
 fun MainMenu() {
     // Текущий экран приложения: HOME, FAVORITES, SHOP, MINIGAMES
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    //var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -90,78 +104,64 @@ fun MainMenu() {
             contentScale = ContentScale.Crop
         )
 
-        // ── Переключение основного контента в зависимости от выбранной вкладки ──
-        when (currentDestination) {
-            AppDestinations.SHOP -> {
-                // Экран магазина: своя вкладка, свой скролл, свой баланс
-                ShopScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding() // чтобы верхняя плашка не уезжала под статус-бар
-                )
-            }
-            AppDestinations.DEBUG -> {
-                AdultMenu()
-            }
-
-            else -> {
-                // HOME и пока-что-заглушки для Бюджета / Мини-игр
-                HomeContent()
-            }
-        }
-
-        // ── Навигация: в магазине — снизу горизонтально, в остальных экранах — справа сверху ──
-        if (currentDestination == AppDestinations.SHOP) {
-
-            // Нижняя горизонтальная панель навигации (только для магазина)
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppDestinations.entries.forEachIndexed { index, destination ->
-                    BubbleButton(
-                        destination = destination,
-                        selected = destination == currentDestination,
-                        onClick = { currentDestination = destination },
-                        index = index
-                    )
-                }
-            }
-        } else {
-
-            // Верхнее вертикальное меню навигации (для всех остальных экранов)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = 12.dp, top = 40.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AppDestinations.entries.forEachIndexed { index, destination ->
-                    BubbleButton(
-                        destination = destination,
-                        selected = destination == currentDestination,
-                        onClick = { currentDestination = destination },
-                        index = index
-                    )
-                }
-            }
-        }
+        HomeContent()
     }
 }
 
-/**
- * Домашний экран: персонаж по центру + три кружка-стата снизу.
- * Всё, что раньше было внутри MainMenu(), кроме навигации и фона.
- */
 @Composable
 private fun HomeContent() {
-    var liquidProgress by rememberSaveable { mutableStateOf(0.4f) }
+    val context = LocalContext.current
+    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+        // Деньги
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(top = 16.dp, end = 16.dp)
+                .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Box(
+                modifier = Modifier
+                    .size(35.dp)
+                    .background(Color(0xFFFFC107), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokePx = 15F
+                    val radius = (size.minDimension - strokePx) / 2f
+                    val center = Offset(size.width / 2f, size.height / 2f)
+
+
+                    drawCircle(
+                        color = Color(0xFFFFEB3B),
+                        radius = radius,
+                        center = center,
+                        style = Stroke(width = strokePx)
+                    )
+                }
+
+                Text(
+                    text = "F",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(
+                text = data.money.toString(),
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         CharacterLayer(
             modifier = Modifier
@@ -182,7 +182,7 @@ private fun HomeContent() {
                 LiquidCircleProgress(
                     index = index,
                     parameters = parameters,
-                    progress = liquidProgress,
+                    progress = data.petNeeds[index]/100F,
                     modifier = Modifier
                         .size(110.dp)
                         .padding(top = 30.dp, start = 20.dp)
@@ -294,63 +294,6 @@ fun CharacterLayer(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun BubbleButton(
-    destination: AppDestinations,
-    selected: Boolean,
-    onClick: () -> Unit,
-    index: Int
-) {
-    val transition = rememberInfiniteTransition(label = "bubble_$index")
-
-    // разные фазы плавания за счёт разных длительностей
-    val durationMillis = 2200 + index * 400
-
-    val offsetY by transition.animateFloat(
-        initialValue = -10f,
-        targetValue = 10f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = durationMillis, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "float_$index"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .clickable { onClick() }
-            .padding(6.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .graphicsLayer { translationY = offsetY }
-                .clip(CircleShape)
-                .background(
-                    if (selected) Color.White.copy(alpha = 0.35f)
-                    else Color.White.copy(alpha = 0.15f)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(destination.icon),
-                contentDescription = destination.label,
-                tint = if (selected) Color.Black else Color.Black.copy(alpha = 0.85f),
-                modifier = Modifier.size(28.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = destination.label,
-            color = if (selected) Color.Black else Color.Black.copy(alpha = 0.7f),
-            fontSize = 12.sp
-        )
-    }
-}
 
 enum class Parameters( //кнопки внизу экрана
     val label: String,
@@ -358,22 +301,21 @@ enum class Parameters( //кнопки внизу экрана
     val color: Color,
     val strokeColor: Color
 ) {
+    FULLNESS("Сытость",
+        R.drawable.ic_favorite,
+        color = Color(0xFFFFA94D),
+        strokeColor = Color(0xFFD97A1F)
+    ),
+    GROOMED("Уход",
+        R.drawable.ic_favorite,
+        color = Color(0xFF4ECDC4),
+        strokeColor = Color(0xFF2E9E96)
+    ),
     HAPPINESS("Счастье",
         R.drawable.ic_favorite,
         color = Color(0xFFFF6B9D),
          strokeColor = Color(0xFFD6336C)
     ),
-    FULLNESS("Сытость",
-        R.drawable.ic_favorite,
-        color = Color(0xFFFFA94D),
-         strokeColor = Color(0xFFD97A1F)
-    ),
-    GROOMED("Уход",
-        R.drawable.ic_favorite,
-        color = Color(0xFF4ECDC4),
-         strokeColor = Color(0xFF2E9E96)
-    ),
-
 }
 
 enum class AppDestinations( //кнопки навигации в боковом меню
