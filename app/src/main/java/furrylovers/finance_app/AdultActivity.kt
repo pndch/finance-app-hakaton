@@ -1,5 +1,6 @@
 package furrylovers.finance_app
 
+import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -53,6 +54,7 @@ class AdultActivity : ComponentActivity() {
 @Composable
 fun AdultMenu() {
     val context = LocalContext.current
+    val activity = context as? Activity
     //var data = DoJson(context).loadData()
 
     Column(
@@ -79,6 +81,7 @@ fun AdultMenu() {
             modifier = Modifier.padding(horizontal = 8.dp),
             onClick = {
                 context.startActivity(Intent(context, TitleScreenActivity::class.java))
+                activity?.finish()
             }
         ) {
             Text(text = "Вернуться")

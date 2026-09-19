@@ -27,6 +27,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import java.nio.file.WatchEvent
 
+
+//
+// СМЕНИТЬ НАЗВАНИЕ ФАЙЛА НА CharacterNameActivity ИЛИ МОЖНО ДАЖЕ ОБЪЕДЕНИТЬ DESIGN и NAME В ОДНУ АКТИВИТИ
+//
+
 class MainActivity : ComponentActivity() { //точка входа в программу
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +48,14 @@ fun MainScreen() { //потом поменять название надо бу�
     val context = LocalContext.current
     var characterName by rememberSaveable { mutableStateOf("") }
     val activity = context as? Activity
+
+    //Если персонаж создан сразу скипаем этот экран
+    //По хорошему вызывать сразу главный экран и там чекать создан он или нет
+    //И если не создан вызывать создание перса но как будто все равно
+    if (!Data().isFirstStart(context)) {
+        context.startActivity(Intent(context, TitleScreenActivity::class.java))
+        activity?.finish()
+    }
 
 
     Column( // элементы друг под другом Еще есть Row
@@ -66,17 +79,11 @@ fun MainScreen() { //потом поменять название надо бу�
         )
         Button(
             onClick = {
-                //всплывающее сообщение Toast.makeText(context, "Кнопка нажата!", Toast.LENGTH_SHORT).show()
-                var character = Data()
-                character.petName = characterName
-                DoJson(context).saveData(character)
+                Data().changePetName(context, characterName)
                 context.startActivity(Intent(context, CharacterDesignActivity::class.java))
                 activity?.finish()
-
             }
-        ) {
-            Text(text = "Сохранить и продолжить")
-        }
+        ) { Text(text = "Сохранить и продолжить") }
     }
 }
 

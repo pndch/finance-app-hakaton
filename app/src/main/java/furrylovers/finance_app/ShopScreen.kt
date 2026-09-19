@@ -75,12 +75,12 @@ private val demoShopItems = listOf(
 @Composable
 fun ShopScreen(
     modifier: Modifier = Modifier,
-    initialBalance: Int = 500
 ) {
     val context = LocalContext.current
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var balance by rememberSaveable { mutableIntStateOf(initialBalance) }
+    var data: Data = DoJson(context).loadData()
+    var balance by rememberSaveable { mutableIntStateOf(data.money) }
 
     val categories = ShopCategory.values()
 
@@ -128,9 +128,11 @@ fun ShopScreen(
                     onBuyClick = {
                         if (balance >= item.price) {
                             balance -= item.price
-                            Toast.makeText(context, "Покупка успешна!", Toast.LENGTH_SHORT).show()
+                            Data().changeMoney(context, -item.price)
+                            Data().changeInventory(context, item.id-1, 1)
+                            //Toast.makeText(context, DoJson(context).loadData().inventory[item.id-1].toString(), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Недостаточно монет!", Toast.LENGTH_SHORT).show()
+                            //Toast.makeText(context, "Недостаточно монет!", Toast.LENGTH_SHORT).show()
                         }
                     }
                 )

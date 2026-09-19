@@ -2,17 +2,74 @@ package furrylovers.finance_app
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import android.content.Context
+import android.text.BoringLayout
 import java.io.File
 
 @Serializable
 data class Data(
-    var petName: String = "PetName",
-    var petStage: Int = 1,
-    var petNeeds: MutableList<Int> = mutableListOf(0,0,0), //Food, Care, Fun
+    var firstStart: Boolean = true,
 
-    var money: Int = 0,
-    var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0) //вписать сюда чо тут есть я хз
-)
+    var petName: String = "PetName",
+    var petType: Byte = 1,
+    var petStage: Int = 1,
+    var petNeeds: MutableList<Int> = mutableListOf(0,0,0), //Food, Care, Mood
+
+    var money: Int = 500, //базовое кол-во
+    var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0,0,0,0,0) //вписать сюда чо тут есть я хз
+
+) {
+//
+//    НУЖНО БУДЕТ ПЕРЕДЕЛАТЬ ЧТОБЫ ВСЯКАЯ ФИГНЯ ХРАНИЛАСЬ В ОЗУ И СОХРАНЯЛАСЬ ТОЛЬКО КОГДА ПРИЛОЖЕНИЕ СВОРАЧИВАЕТСЯ
+//
+    fun isFirstStart(context: Context): Boolean {
+        val data = DoJson(context).loadData()
+        return data.firstStart
+    }
+    fun finishFirstStart(context: Context) {
+        val data = DoJson(context).loadData()
+        data.firstStart = false
+        DoJson(context).saveData(data)
+    }
+    fun changePetName(context: Context, name: String) {
+        val data = DoJson(context).loadData()
+        data.petName = name
+        DoJson(context).saveData(data)
+    }
+
+    fun changePetType(context: Context, type: Byte) {
+        val data = DoJson(context).loadData()
+        data.petType = type
+        DoJson(context).saveData(data)
+    }
+
+    fun changePetStage(context: Context, stage: Int) {
+        val data = DoJson(context).loadData()
+        data.petStage = stage
+        DoJson(context).saveData(data)
+    }
+
+    //Сюда передаем не конкретное значение а его изменение
+    //те если нужно уменьшить на 10, то передаем -10 и так далее
+    fun changeMoney(context: Context, money: Int) {
+        val data = DoJson(context).loadData()
+        data.money += money
+        DoJson(context).saveData(data)
+    }
+
+    //Сюда передаем не конкретное значение а его изменение
+    fun changePetNeeds(context: Context, food: Int = 0, care: Int = 0, mood: Int = 0) {
+        val data = DoJson(context).loadData()
+        data.petNeeds = mutableListOf(data.petNeeds[0]+food, data.petNeeds[1]+care, data.petNeeds[2]+mood)
+        DoJson(context).saveData(data)
+    }
+
+    //Сюда передаем не конкретное значение а его изменение
+    fun changeInventory(context: Context, index: Int, change: Int) {
+        val data = DoJson(context).loadData()
+        data.inventory[index] += change
+        DoJson(context).saveData(data)
+    }
+}
 
 class DoJson(private val context: Context) { //переименовать как нибудь
 
@@ -43,9 +100,8 @@ class DoJson(private val context: Context) { //переименовать как
         filePath.writeText(json.encodeToString(Data.serializer(), data))
     }
 
-    fun deleteData(): Data {
+    fun deleteData(){
         val newData = Data()
-        json.encodeToString(Data.serializer(), newData)
-        return newData
+        path.writeText(json.encodeToString(Data.serializer(), newData))
     }
 }

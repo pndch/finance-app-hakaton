@@ -66,9 +66,6 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         window.setBackgroundDrawableResource(android.R.color.transparent)
-
-
-
         setContent {
             MainTheme() {
                 MainMenu()
@@ -95,7 +92,6 @@ fun MainMenu() {
 
         // ── Переключение основного контента в зависимости от выбранной вкладки ──
         when (currentDestination) {
-
             AppDestinations.SHOP -> {
                 // Экран магазина: своя вкладка, свой скролл, свой баланс
                 ShopScreen(
@@ -103,6 +99,9 @@ fun MainMenu() {
                         .fillMaxSize()
                         .statusBarsPadding() // чтобы верхняя плашка не уезжала под статус-бар
                 )
+            }
+            AppDestinations.DEBUG -> {
+                AdultMenu()
             }
 
             else -> {
@@ -385,6 +384,7 @@ enum class AppDestinations( //кнопки навигации в боковом 
     FAVORITES("Бюджет", R.drawable.ic_favorite),
     SHOP("Shop", R.drawable.ic_favorite),
     MINIGAMES("MiniGames", R.drawable.ic_favorite),
+    DEBUG("Debug", R.drawable.ic_favorite),
 }
 
 @Preview(showBackground = true)
