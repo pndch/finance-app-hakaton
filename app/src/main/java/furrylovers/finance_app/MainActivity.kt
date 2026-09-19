@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() { //точка входа в прогр
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // !json.empty()
+
             MainScreen() //весь UI запускается отсюда
         }
     }
@@ -75,7 +75,6 @@ fun MainScreen() { //потом поменять название надо бу�
             onValueChange = { newText ->
                 characterName = newText},
             modifier = Modifier.padding(bottom = 8.dp)
-            //label = { Text("Введите текст") }
         )
         Button(
             onClick = {

@@ -64,11 +64,7 @@ data class Data(
     }
 
     //Сюда передаем не конкретное значение а его изменение
-    fun changeInventory(context: Context, index: Int, change: Int) {
-        val data = DoJson(context).loadData()
-        data.inventory[index] += change
-        DoJson(context).saveData(data)
-    }
+
 }
 
 class DoJson(private val context: Context) { //переименовать как нибудь

@@ -1,11 +1,13 @@
 package furrylovers.finance_app
 
+import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -59,15 +61,23 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigationevent.NavigationEventInfo
 import furrylovers.finance_app.ui.theme.MainTheme
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -75,45 +85,97 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class TitleScreenActivity : ComponentActivity() { //точка входа 2
+    private val viewModel: GameViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         window.setBackgroundDrawableResource(android.R.color.transparent)
+
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
+
         setContent {
             MainTheme() {
-                MainMenu()
+                MainMenu(viewModel)
             }
         }
     }
 }
 
 
-//@PreviewScreenSizes
 @Composable
-fun MainMenu() {
-    // Текущий экран приложения: HOME, FAVORITES, SHOP, MINIGAMES
-    //var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+fun MainMenu(viewModel: GameViewModel) {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            beyondViewportPageCount = 1 //сколько держит панелек в памяти
+        ) { page ->
+            // 0.0 - в фокусе, 1.0 - ушла влево, -1.0 - пришла справа
+            val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        if (pageOffset > 0) {
+                            // уход под другую
+                            val scale = 0.85f + (1f - 0.85f) * (1f - pageOffset.coerceIn(0f, 1f))
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = 1f - pageOffset.coerceIn(0f, 1f)
+                            translationX = pageOffset * size.width * 0.5f
+                        } else {
+                            // накладка сверъу
+                            translationX = 0f
+                            scaleX = 1f
+                            scaleY = 1f
+                            alpha = 1f
+                        }
+                    }
+                    .zIndex(if (pageOffset > 0) 0f else 1f)
+                    .clip(RoundedCornerShape(if (abs(pageOffset) > 0.001f) 24.dp else 0.dp))
+            ) {
+                if (page == 0) {
+                    HomeContent(viewModel)
+                }
+                if (page == 1){
+                    ShopScreen(viewModel)
+                }
+                if (page==2) {
+                    AdultMenu()
+                }
+
+                //надо норм сделать
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeContent(viewModel: GameViewModel) {
+//    val context = LocalContext.current
+    val data by viewModel.data.collectAsStateWithLifecycle()
+//    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ── Общий фон для всех экранов ──
         Image(
             painter = painterResource(R.drawable.background),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-
-        HomeContent()
-    }
-}
-
-@Composable
-private fun HomeContent() {
-    val context = LocalContext.current
-    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
-
-    Box(modifier = Modifier.fillMaxSize()) {
 
         // Деньги
         Row(
@@ -318,19 +380,3 @@ enum class Parameters( //кнопки внизу экрана
     ),
 }
 
-enum class AppDestinations( //кнопки навигации в боковом меню
-    val label: String,
-    val icon: Int,
-) {
-    HOME("Home", R.drawable.ic_home),
-    FAVORITES("Бюджет", R.drawable.ic_favorite),
-    SHOP("Shop", R.drawable.ic_favorite),
-    MINIGAMES("MiniGames", R.drawable.ic_favorite),
-    DEBUG("Debug", R.drawable.ic_favorite),
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainMenuPreview() {
-    MainMenu()
-}

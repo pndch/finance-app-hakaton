@@ -1,6 +1,8 @@
 package furrylovers.finance_app
 
+import android.app.Application
 import android.widget.Toast
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,17 +34,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.compose
 
 data class ShopItem(
     val id: Int,
@@ -74,12 +83,13 @@ private val demoShopItems = listOf(
 
 @Composable
 fun ShopScreen(
+    viewModel: GameViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+//    val context = LocalContext.current
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var data: Data = DoJson(context).loadData()
+    val data by viewModel.data.collectAsStateWithLifecycle()
     var balance by rememberSaveable { mutableIntStateOf(data.money) }
 
     val categories = ShopCategory.values()
@@ -88,6 +98,7 @@ fun ShopScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFFFF8E1))
+            .statusBarsPadding()
     ) {
         BalanceBar(balance = balance)
 
@@ -128,8 +139,11 @@ fun ShopScreen(
                     onBuyClick = {
                         if (balance >= item.price) {
                             balance -= item.price
-                            Data().changeMoney(context, -item.price)
-                            Data().changeInventory(context, item.id-1, 1)
+                            viewModel.buyItem(itemId = item.id, price = item.price)
+
+//                            Data().changeMoney(context, -item.price)
+//                            Data().changeInventory(context, item.id-1, 1)
+
                             //Toast.makeText(context, DoJson(context).loadData().inventory[item.id-1].toString(), Toast.LENGTH_SHORT).show()
                         } else {
                             //Toast.makeText(context, "Недостаточно монет!", Toast.LENGTH_SHORT).show()
@@ -178,19 +192,40 @@ private fun BalanceBar(balance: Int) {
 
 @Composable
 private fun CoinBadge() {
-    Box(
+    // Деньги
+    Row(
         modifier = Modifier
-            .size(22.dp)
-            .clip(CircleShape)
-            .background(Color(0xFFFFC107)),
-        contentAlignment = Alignment.Center
+            .statusBarsPadding()
     ) {
-        Text(
-            text = "$",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF5D4037)
-        )
+
+        Box(
+            modifier = Modifier
+                .size(35.dp)
+                .background(Color(0xFFFFC107), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokePx = 15F
+                val radius = (size.minDimension - strokePx) / 2f
+                val center = Offset(size.width / 2f, size.height / 2f)
+
+
+                drawCircle(
+                    color = Color(0xFFFFEB3B),
+                    radius = radius,
+                    center = center,
+                    style = Stroke(width = strokePx)
+                )
+            }
+
+            Text(
+                text = "F",
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
@@ -271,7 +306,16 @@ private fun ShopItemCard(
 @Preview(showBackground = true, widthDp = 380, heightDp = 720)
 @Composable
 private fun ShopScreenPreview() {
+    val context = LocalContext.current
+    val app = context.applicationContext as Application
+    val fakeViewModel = remember {
+        GameViewModel(app).apply {
+            // ⚠️ только если у тебя есть публичный сеттер или update()
+            update { Data(money = 9999) }
+        }
+    }
+
     MaterialTheme {
-        ShopScreen()
+        ShopScreen(viewModel = fakeViewModel)
     }
 }
