@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import furrylovers.finance_app.ui.theme.ui.theme.FinanceappTheme
+import furrylovers.finance_app.ui.theme.MainTheme
 import androidx.compose.foundation.layout.Row
 
 class AdultActivity : ComponentActivity() {
@@ -26,7 +26,7 @@ class AdultActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            FinanceappTheme {
+            MainTheme {
                     AdultMenu()
                 }
             }
@@ -83,7 +83,7 @@ fun AdultMenu() {
 @Preview(showBackground = true)
 @Composable
 fun AdultPreview() {
-    FinanceappTheme {
+    MainTheme {
         AdultMenu()
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import furrylovers.finance_app.ui.theme.MainTheme
 
 
 //
@@ -33,7 +34,9 @@ class MainActivity : ComponentActivity() { //точка входа в прогр
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MainScreen() //весь UI запускается отсюда
+            MainTheme {
+                MainScreen() //весь UI запускается отсюда
+            }
         }
     }
 }
