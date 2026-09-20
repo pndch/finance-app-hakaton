@@ -3,4 +3,6 @@
     <string name="title_activity_title_screen">TitleScreenActivity</string>
     <string name="title_activity_character_design">CharacterDesignActivity</string>
     <string name="title_activity_adult">AdultActivity</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_quests">QuestsActivity</string>
 </resources>

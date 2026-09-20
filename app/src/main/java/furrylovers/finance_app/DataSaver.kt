@@ -35,7 +35,6 @@ data class Data(
         data.petName = name
         DoJson(context).saveData(data)
     }
-
     fun changePetType(context: Context, type: Byte) {
         val data = DoJson(context).loadData()
         data.petType = type
@@ -85,8 +84,17 @@ class DoJson(private val context: Context) { //переименовать как
     }
 
     fun loadData(): Data {
-        val restoredData = json.decodeFromString<Data>(path.readText())
-        return restoredData
+        try {
+            if (path.exists()) {
+                return json.decodeFromString<Data>(path.readText())
+            } else {
+                DoJson(context).saveData(Data())
+                return json.decodeFromString<Data>(path.readText())
+            }
+        } catch (e: Exception) {
+            DoJson(context).saveData(Data())
+            return json.decodeFromString<Data>(path.readText())
+        }
     }
 
     //использовать только для отладки / демонстрации проекта

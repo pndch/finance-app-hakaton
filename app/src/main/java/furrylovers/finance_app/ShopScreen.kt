@@ -1,6 +1,7 @@
 package furrylovers.finance_app
 
 import android.widget.Toast
+import furrylovers.finance_app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.remember
 
 data class ShopItem(
     val id: Int,
@@ -79,7 +81,7 @@ fun ShopScreen(
     val context = LocalContext.current
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var data: Data = DoJson(context).loadData()
+    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
     var balance by rememberSaveable { mutableIntStateOf(data.money) }
 
     val categories = ShopCategory.values()
