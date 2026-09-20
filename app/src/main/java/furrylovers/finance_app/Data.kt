@@ -18,7 +18,7 @@ data class Data(
     var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0,0,0,0,0) //вписать сюда чо тут есть я хз
 
 ) {
-//
+    //
 //    НУЖНО БУДЕТ ПЕРЕДЕЛАТЬ ЧТОБЫ ВСЯКАЯ ФИГНЯ ХРАНИЛАСЬ В ОЗУ И СОХРАНЯЛАСЬ ТОЛЬКО КОГДА ПРИЛОЖЕНИЕ СВОРАЧИВАЕТСЯ
 //
     fun isFirstStart(context: Context): Boolean {
@@ -64,48 +64,4 @@ data class Data(
 
     //Сюда передаем не конкретное значение а его изменение
 
-}
-
-class DoJson(private val context: Context) { //переименовать как нибудь
-
-    private val path = File(context.filesDir,"data.json")
-
-    private val json = Json {
-        prettyPrint = true
-        encodeDefaults = true
-    }
-
-    fun saveData(data: Data) {
-        path.writeText(json.encodeToString(Data.serializer(), data))
-    }
-
-    fun loadData(): Data {
-        try {
-            if (path.exists()) {
-                return json.decodeFromString<Data>(path.readText())
-            } else {
-                DoJson(context).saveData(Data())
-                return json.decodeFromString<Data>(path.readText())
-            }
-        } catch (e: Exception) {
-            DoJson(context).saveData(Data())
-            return json.decodeFromString<Data>(path.readText())
-        }
-    }
-
-    //использовать только для отладки / демонстрации проекта
-    fun loadDataFromFile(filePath: File): Data {
-        val data = json.decodeFromString<Data>(filePath.readText())
-        return data
-    }
-
-    //использовать только для отладки
-    fun saveDataToFile(data: Data, filePath: File) {
-        filePath.writeText(json.encodeToString(Data.serializer(), data))
-    }
-
-    fun deleteData(){
-        val newData = Data()
-        path.writeText(json.encodeToString(Data.serializer(), newData))
-    }
 }
