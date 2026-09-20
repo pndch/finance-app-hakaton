@@ -35,7 +35,6 @@ data class Data(
         data.petName = name
         DoJson(context).saveData(data)
     }
-
     fun changePetType(context: Context, type: Byte) {
         val data = DoJson(context).loadData()
         data.petType = type

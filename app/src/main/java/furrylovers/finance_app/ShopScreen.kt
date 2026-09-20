@@ -3,6 +3,7 @@ package furrylovers.finance_app
 import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
+import furrylovers.finance_app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.compose
+import androidx.compose.runtime.remember
 
 data class ShopItem(
     val id: Int,
