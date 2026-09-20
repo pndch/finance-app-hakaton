@@ -22,18 +22,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         saver.saveData(newData)
     }
 
-    fun changeStats(itemId: Int) = update { d ->
-        d.copy(
-            petNeeds = d.petNeeds.toMutableList().also { it[itemId - 1] += 10 }
-        )
-    }
     //пополнение
     fun changeMoney(delta: Int) = update { it.copy(money = it.money + delta) }
 
     fun buyItem(itemId: Int, price: Int) = update { d ->
         d.copy(
             money = d.money - price,
-            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 }
+            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 },
+            //petNeeds = { }
         )
     }
 }

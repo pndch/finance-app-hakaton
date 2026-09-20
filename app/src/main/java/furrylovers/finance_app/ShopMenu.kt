@@ -1,8 +1,8 @@
 package furrylovers.finance_app
 
 import android.app.Application
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,8 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import furrylovers.finance_app.ui.theme.SuccessGreen
-
+import kotlinx.coroutines.flow.compose
 
 data class ShopItem(
     val id: Int,
@@ -84,41 +82,31 @@ private val demoShopItems = listOf(
 )
 
 @Composable
-fun ShopScreen( viewModel: GameViewModel ) {
-    val data by viewModel.data.collectAsStateWithLifecycle()
-    ShopScreenContent(data)
-}
+fun ShopScreen(
+    viewModel: GameViewModel,
+    modifier: Modifier = Modifier,
+) {
+//    val context = LocalContext.current
 
-@Composable
-fun ShopScreenContent(data: Data)
-{
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val data by viewModel.data.collectAsStateWithLifecycle()
+    var balance by rememberSaveable { mutableIntStateOf(data.money) }
+
     val categories = ShopCategory.values()
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color(0xFFFFF8E1))
             .statusBarsPadding()
     ) {
-        BalanceBar(balance = data.money)
-
-        Image(
-            painter = painterResource(R.drawable.photo_shop),
-            contentDescription = null,
-            modifier = Modifier
-                .padding(top = 0.dp)
-                .height(150.dp)
-                .fillMaxWidth(),
-
-            contentScale = ContentScale.Crop
-        )
+        BalanceBar(balance = balance)
 
         ScrollableTabRow(
             selectedTabIndex = selectedTab,
-            edgePadding = 0.dp, //12
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.primary,
+            edgePadding = 12.dp,
+            containerColor = Color(0xFFFFF3E0),
+            contentColor = Color(0xFFEF6C00),
             divider = {}
         ) {
             categories.forEachIndexed { index, category ->
@@ -149,9 +137,9 @@ fun ShopScreenContent(data: Data)
                 ShopItemCard(
                     item = item,
                     onBuyClick = {
-                        if (data.money >= item.price) {
-                            data.money -= item.price
-                            //viewModel.buyItem(itemId = item.id, price = item.price)
+                        if (balance >= item.price) {
+                            balance -= item.price
+                            viewModel.buyItem(itemId = item.id, price = item.price)
 
 //                            Data().changeMoney(context, -item.price)
 //                            Data().changeInventory(context, item.id-1, 1)
@@ -174,7 +162,7 @@ private fun BalanceBar(balance: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color(0xFFFFE0B2))
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -186,7 +174,7 @@ private fun BalanceBar(balance: Int) {
                 text = "Магазин",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = Color(0xFF5D4037)
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CoinBadge()
@@ -195,7 +183,7 @@ private fun BalanceBar(balance: Int) {
                     text = "Баланс: $balance",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black,
+                    color = Color(0xFF5D4037)
                 )
             }
         }
@@ -249,7 +237,7 @@ private fun ShopItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -268,7 +256,7 @@ private fun ShopItemCard(
                 Icon(
                     painter = painterResource(R.drawable.ic_favorite),
                     contentDescription = null,
-                    tint = Color.Black,
+                    tint = Color(0xFF6D4C41),
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -280,7 +268,7 @@ private fun ShopItemCard(
                     text = item.name,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    color = Color(0xFF3E2723)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -289,7 +277,7 @@ private fun ShopItemCard(
                     Text(
                         text = "${item.price} монет",
                         fontSize = 14.sp,
-                        color = Color.Black,
+                        color = Color(0xFF6D4C41)
                     )
                 }
             }
@@ -300,7 +288,7 @@ private fun ShopItemCard(
                 onClick = onBuyClick,
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = SuccessGreen,
+                    containerColor = Color(0xFF66BB6A),
                     contentColor = Color.White
                 ),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
@@ -318,7 +306,16 @@ private fun ShopItemCard(
 @Preview(showBackground = true, widthDp = 380, heightDp = 720)
 @Composable
 private fun ShopScreenPreview() {
+    val context = LocalContext.current
+    val app = context.applicationContext as Application
+    val fakeViewModel = remember {
+        GameViewModel(app).apply {
+            // ⚠️ только если у тебя есть публичный сеттер или update()
+            update { Data(money = 9999) }
+        }
+    }
+
     MaterialTheme {
-        ShopScreenContent(Data())
+        ShopScreen(viewModel = fakeViewModel)
     }
 }
