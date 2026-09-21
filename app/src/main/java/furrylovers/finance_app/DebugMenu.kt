@@ -20,6 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import furrylovers.finance_app.ui.theme.MainTheme
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.tooling.preview.Devices
 
 class AdultActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +81,7 @@ fun AdultMenu() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
 fun AdultPreview() {
     MainTheme {

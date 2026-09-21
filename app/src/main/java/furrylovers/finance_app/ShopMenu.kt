@@ -2,6 +2,7 @@ package furrylovers.finance_app
 
 import android.app.Application
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import furrylovers.finance_app.ui.theme.SuccessGreen
 
 
 data class ShopItem(
@@ -82,7 +85,6 @@ private val demoShopItems = listOf(
 
 @Composable
 fun ShopScreen( viewModel: GameViewModel ) {
-//    val context = LocalContext.current
     val data by viewModel.data.collectAsStateWithLifecycle()
     ShopScreenContent(data)
 }
@@ -96,16 +98,27 @@ fun ShopScreenContent(data: Data)
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFF8E1))
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         BalanceBar(balance = data.money)
 
+        Image(
+            painter = painterResource(R.drawable.photo_shop),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(top = 0.dp)
+                .height(150.dp)
+                .fillMaxWidth(),
+
+            contentScale = ContentScale.Crop
+        )
+
         ScrollableTabRow(
             selectedTabIndex = selectedTab,
-            edgePadding = 12.dp,
-            containerColor = Color(0xFFFFF3E0),
-            contentColor = Color(0xFFEF6C00),
+            edgePadding = 0.dp, //12
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary,
             divider = {}
         ) {
             categories.forEachIndexed { index, category ->
@@ -161,7 +174,7 @@ private fun BalanceBar(balance: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFFFE0B2))
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -173,7 +186,7 @@ private fun BalanceBar(balance: Int) {
                 text = "Магазин",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF5D4037)
+                color = Color.Black,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CoinBadge()
@@ -182,7 +195,7 @@ private fun BalanceBar(balance: Int) {
                     text = "Баланс: $balance",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF5D4037)
+                    color = Color.Black,
                 )
             }
         }
@@ -236,7 +249,7 @@ private fun ShopItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -255,7 +268,7 @@ private fun ShopItemCard(
                 Icon(
                     painter = painterResource(R.drawable.ic_favorite),
                     contentDescription = null,
-                    tint = Color(0xFF6D4C41),
+                    tint = Color.Black,
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -267,7 +280,7 @@ private fun ShopItemCard(
                     text = item.name,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3E2723)
+                    color = Color.Black,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -276,7 +289,7 @@ private fun ShopItemCard(
                     Text(
                         text = "${item.price} монет",
                         fontSize = 14.sp,
-                        color = Color(0xFF6D4C41)
+                        color = Color.Black,
                     )
                 }
             }
@@ -287,7 +300,7 @@ private fun ShopItemCard(
                 onClick = onBuyClick,
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF66BB6A),
+                    containerColor = SuccessGreen,
                     contentColor = Color.White
                 ),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import furrylovers.finance_app.ui.theme.MainTheme
@@ -88,7 +89,7 @@ fun MainScreenContent() {
 }
 
 // @Preview - визуализация ин тайм
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
 fun Preview() {
     MainScreenContent()

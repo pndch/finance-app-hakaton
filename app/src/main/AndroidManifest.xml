@@ -45,6 +45,18 @@
             android:label="@string/title_activity_quests"
             android:theme="@style/Theme.Financeapp"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".BudgetMeni"
+            android:exported="false"
+            android:label="@string/title_activity_budget_meni"
+            android:theme="@style/Theme.Financeapp"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".MainMenuNew"
+            android:exported="false"
+            android:label="@string/title_activity_main_menu_new"
+            android:theme="@style/Theme.Financeapp"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

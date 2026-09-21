@@ -30,12 +30,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +55,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.*
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -86,62 +90,101 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
         }
     }
 }
+
+enum class AppDestinations(
+    val icon: Int,
+) {
+    SHOP(R.drawable.ic_favorite),
+    QUESTS(R.drawable.ic_favorite),
+    HOME(R.drawable.ic_home),
+    BUDGET(R.drawable.ic_favorite),
+    PROFILE(R.drawable.ic_account_box),
+}
+
 @Composable
 fun MainMenu(viewModel: GameViewModel) {
     val data by viewModel.data.collectAsStateWithLifecycle()
-    MainMenuContent(data)
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
 
-    val pagerState = rememberPagerState(pageCount = { 3 })
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            beyondViewportPageCount = 1 //сколько держит панелек в памяти
-        ) { page ->
-            // 0.0 - в фокусе, 1.0 - ушла влево, -1.0 - пришла справа
-            val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+    //MainMenuContent(data)
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        if (pageOffset > 0) {
-                            // уход под другую
-                            val scale = 0.85f + (1f - 0.85f) * (1f - pageOffset.coerceIn(0f, 1f))
-                            scaleX = scale
-                            scaleY = scale
-                            alpha = 1f - pageOffset.coerceIn(0f, 1f)
-                            translationX = pageOffset * size.width * 0.5f
-                        } else {
-                            // накладка сверъу
-                            translationX = 0f
-                            scaleX = 1f
-                            scaleY = 1f
-                            alpha = 1f
-                        }
-                    }
-                    .zIndex(if (pageOffset > 0) 0f else 1f)
-                    .clip(RoundedCornerShape(if (abs(pageOffset) > 0.001f) 24.dp else 0.dp))
-            ) {
-                if (page == 0) {
-                    MainMenuContent(data)
-                }
-                if (page == 1){
-                    ShopScreen(viewModel)
-                }
-                if (page==2) {
-                    AdultMenu()
-                }
-
-                //надо норм сделать
+    NavigationSuiteScaffold(
+        navigationSuiteItems = {
+            AppDestinations.entries.forEach {
+                item(
+                    icon = {
+                        Icon(
+                            painterResource(it.icon),
+                            contentDescription = ""
+                        )
+                    },
+                    selected = it == currentDestination,
+                    onClick = { currentDestination = it }
+                )
             }
+        }
+    ) {
+        when (currentDestination) {
+            AppDestinations.SHOP -> ShopScreen(viewModel)
+            AppDestinations.QUESTS -> QuestMenu(viewModel)
+            AppDestinations.HOME -> MainMenuContent(data)
+            AppDestinations.BUDGET -> BudgetMenu(viewModel)
+            AppDestinations.PROFILE -> AdultMenu()
         }
     }
 }
+
+
+//    val pagerState = rememberPagerState(pageCount = { 3 })
+//    Box(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.Black)
+//    ) {
+//        HorizontalPager(
+//            state = pagerState,
+//            modifier = Modifier.fillMaxSize(),
+//            beyondViewportPageCount = 1 //сколько держит панелек в памяти
+//        ) { page ->
+//            // 0.0 - в фокусе, 1.0 - ушла влево, -1.0 - пришла справа
+//            val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+//
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .graphicsLayer {
+//                        if (pageOffset > 0) {
+//                            // уход под другую
+//                            val scale = 0.85f + (1f - 0.85f) * (1f - pageOffset.coerceIn(0f, 1f))
+//                            scaleX = scale
+//                            scaleY = scale
+//                            alpha = 1f - pageOffset.coerceIn(0f, 1f)
+//                            translationX = pageOffset * size.width * 0.5f
+//                        } else {
+//                            // накладка сверъу
+//                            translationX = 0f
+//                            scaleX = 1f
+//                            scaleY = 1f
+//                            alpha = 1f
+//                        }
+//                    }
+//                    .zIndex(if (pageOffset > 0) 0f else 1f)
+//                    .clip(RoundedCornerShape(if (abs(pageOffset) > 0.001f) 24.dp else 0.dp))
+//            ) {
+//                if (page == 0) {
+//                    MainMenuContent(data)
+//                }
+//                if (page == 1){
+//                    ShopScreen(viewModel)
+//                }
+//                if (page==2) {
+//                    AdultMenu()
+//                }
+//
+//                //надо норм сделать
+//            }
+//        }
+//    }
 
 @Composable
 private fun MainMenuContent(data: Data) {
@@ -149,87 +192,86 @@ private fun MainMenuContent(data: Data) {
 //    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
 
     Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(R.drawable.background),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
 
-        Image(
-            painter = painterResource(R.drawable.background),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        // Деньги
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(top = 16.dp, end = 16.dp)
-                .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Box(
+            // Деньги
+            Row(
                 modifier = Modifier
-                    .size(35.dp)
-                    .background(Color(0xFFFFC107), CircleShape),
-                contentAlignment = Alignment.Center
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 16.dp, end = 16.dp)
+                    .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
 
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokePx = 15F
-                    val radius = (size.minDimension - strokePx) / 2f
-                    val center = Offset(size.width / 2f, size.height / 2f)
+                Box(
+                    modifier = Modifier
+                        .size(35.dp)
+                        .background(Color(0xFFFFC107), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val strokePx = 15F
+                        val radius = (size.minDimension - strokePx) / 2f
+                        val center = Offset(size.width / 2f, size.height / 2f)
 
 
-                    drawCircle(
-                        color = Color(0xFFFFEB3B),
-                        radius = radius,
-                        center = center,
-                        style = Stroke(width = strokePx)
+                        drawCircle(
+                            color = Color(0xFFFFEB3B),
+                            radius = radius,
+                            center = center,
+                            style = Stroke(width = strokePx)
+                        )
+                    }
+
+                    Text(
+                        text = "F",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-
+                Spacer(modifier = Modifier.size(8.dp))
                 Text(
-                    text = "F",
+                    text = data.money.toString(),
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-            Spacer(modifier = Modifier.size(8.dp))
-            Text(
-                text = data.money.toString(),
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+
+            CharacterLayer(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxSize()
+                    .padding(bottom = 30.dp)
             )
-        }
 
-        CharacterLayer(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxSize()
-                .padding(bottom = 30.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(bottom = 40.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Parameters.entries.forEachIndexed { index, parameters ->
-                LiquidCircleProgress(
-                    index = index,
-                    parameters = parameters,
-                    progress = data.petNeeds[index]/100F,
-                    modifier = Modifier
-                        .size(110.dp)
-                        .padding(top = 30.dp, start = 20.dp)
-                )
-            }
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 40.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+    //            Parameters.entries.forEachIndexed { index, parameters ->
+    //                LiquidCircleProgress(
+    //                    index = index,
+    //                    parameters = parameters,
+    //                    progress = data.petNeeds[index]/100F,
+    //                    modifier = Modifier
+    //                        .size(110.dp)
+    //                        .padding(top = 30.dp, start = 20.dp)
+    //                )
+    //            }
         }
     }
 }
@@ -355,11 +397,11 @@ enum class Parameters( //кнопки внизу экрана
     HAPPINESS("Счастье",
         R.drawable.ic_favorite,
         color = Color(0xFFFF6B9D),
-         strokeColor = Color(0xFFD6336C)
+        strokeColor = Color(0xFFD6336C)
     ),
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
 fun MainMenuPreview() {
     MainTheme() {

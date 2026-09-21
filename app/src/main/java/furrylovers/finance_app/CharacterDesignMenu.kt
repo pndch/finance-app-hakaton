@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import android.content.Context
+import androidx.compose.ui.tooling.preview.Devices
 
 class CharacterDesignActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -219,7 +220,7 @@ fun CharacterDesign() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
 fun GreetingPreview() {
     MainTheme {
