@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 
@@ -80,25 +81,25 @@ private val demoShopItems = listOf(
 )
 
 @Composable
-fun ShopScreen(
-    viewModel: GameViewModel,
-    modifier: Modifier = Modifier,
-) {
+fun ShopScreen( viewModel: GameViewModel ) {
 //    val context = LocalContext.current
-
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val data by viewModel.data.collectAsStateWithLifecycle()
-    var balance by rememberSaveable { mutableIntStateOf(data.money) }
+    ShopScreenContent(data)
+}
 
+@Composable
+fun ShopScreenContent(data: Data)
+{
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val categories = ShopCategory.values()
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFFF8E1))
             .statusBarsPadding()
     ) {
-        BalanceBar(balance = balance)
+        BalanceBar(balance = data.money)
 
         ScrollableTabRow(
             selectedTabIndex = selectedTab,
@@ -135,9 +136,9 @@ fun ShopScreen(
                 ShopItemCard(
                     item = item,
                     onBuyClick = {
-                        if (balance >= item.price) {
-                            balance -= item.price
-                            viewModel.buyItem(itemId = item.id, price = item.price)
+                        if (data.money >= item.price) {
+                            data.money -= item.price
+                            //viewModel.buyItem(itemId = item.id, price = item.price)
 
 //                            Data().changeMoney(context, -item.price)
 //                            Data().changeInventory(context, item.id-1, 1)
@@ -304,16 +305,7 @@ private fun ShopItemCard(
 @Preview(showBackground = true, widthDp = 380, heightDp = 720)
 @Composable
 private fun ShopScreenPreview() {
-    val context = LocalContext.current
-    val app = context.applicationContext as Application
-    val fakeViewModel = remember {
-        GameViewModel(app).apply {
-            // ⚠️ только если у тебя есть публичный сеттер или update()
-            update { Data(money = 9999) }
-        }
-    }
-
     MaterialTheme {
-        ShopScreen(viewModel = fakeViewModel)
+        ShopScreenContent(Data())
     }
 }

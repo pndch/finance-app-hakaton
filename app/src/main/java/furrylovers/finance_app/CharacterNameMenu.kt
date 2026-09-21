@@ -25,11 +25,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import furrylovers.finance_app.ui.theme.MainTheme
 
-
-//
-// СМЕНИТЬ НАЗВАНИЕ ФАЙЛА НА CharacterNameActivity ИЛИ МОЖНО ДАЖЕ ОБЪЕДЕНИТЬ DESIGN и NAME В ОДНУ АКТИВИТИ
-//
-
 class MainActivity : ComponentActivity() { //точка входа в программу
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +40,6 @@ class MainActivity : ComponentActivity() { //точка входа в прогр
 @Composable
 fun MainScreen() { //потом поменять название надо будет на что то осмысленное
     val context = LocalContext.current
-    var characterName by rememberSaveable { mutableStateOf("") }
     val activity = context as? Activity
 
     //Если персонаж создан сразу скипаем этот экран
@@ -54,8 +48,16 @@ fun MainScreen() { //потом поменять название надо бу�
     if (!Data().isFirstStart(context)) {
         context.startActivity(Intent(context, TitleScreenActivity::class.java))
         activity?.finish()
+    } else {
+        MainScreenContent()
     }
+}
 
+@Composable
+fun MainScreenContent() {
+    var characterName by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val activity = context as? Activity
 
     Column( // элементы друг под другом Еще есть Row
         modifier = Modifier
@@ -89,5 +91,5 @@ fun MainScreen() { //потом поменять название надо бу�
 @Preview(showBackground = true)
 @Composable
 fun Preview() {
-    MainScreen()
+    MainScreenContent()
 }

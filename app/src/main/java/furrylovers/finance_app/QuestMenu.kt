@@ -15,23 +15,16 @@ import furrylovers.finance_app.ui.theme.MainTheme
 
 import androidx.compose.ui.platform.LocalContext
 
-class QuestsActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MainTheme() {
-                QuestMenu()
-            }
-        }
-    }
+@Composable
+fun QuestMenu( viewModel: GameViewModel ) {
+    val context = LocalContext.current
+    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
+    QuestMenuContent(data)
+
 }
 
 @Composable
-fun QuestMenu() {
-    val context = LocalContext.current
-    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
-
+fun QuestMenuContent( data: Data ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,6 +37,6 @@ fun QuestMenu() {
 @Composable
 fun QuestMenuPreview() {
     MainTheme() {
-        QuestMenu()
+        QuestMenuContent(Data())
     }
 }

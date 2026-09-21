@@ -1,6 +1,5 @@
 package furrylovers.finance_app
 
-import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -87,12 +86,12 @@ class TitleScreenActivity : ComponentActivity() { //точка входа 2
         }
     }
 }
-
-
 @Composable
 fun MainMenu(viewModel: GameViewModel) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val data by viewModel.data.collectAsStateWithLifecycle()
+    MainMenuContent(data)
 
+    val pagerState = rememberPagerState(pageCount = { 3 })
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -129,7 +128,7 @@ fun MainMenu(viewModel: GameViewModel) {
                     .clip(RoundedCornerShape(if (abs(pageOffset) > 0.001f) 24.dp else 0.dp))
             ) {
                 if (page == 0) {
-                    HomeContent(viewModel)
+                    MainMenuContent(data)
                 }
                 if (page == 1){
                     ShopScreen(viewModel)
@@ -145,9 +144,8 @@ fun MainMenu(viewModel: GameViewModel) {
 }
 
 @Composable
-private fun HomeContent(viewModel: GameViewModel) {
+private fun MainMenuContent(data: Data) {
 //    val context = LocalContext.current
-    val data by viewModel.data.collectAsStateWithLifecycle()
 //    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -365,7 +363,7 @@ enum class Parameters( //кнопки внизу экрана
 @Composable
 fun MainMenuPreview() {
     MainTheme() {
-        MainMenu(GameViewModel(Application()))
+        MainMenuContent(Data())
     }
 }
 

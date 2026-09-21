@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Context
 
 class CharacterDesignActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             MainTheme {
                 CharacterDesign()
@@ -217,7 +217,6 @@ fun CharacterDesign() {
             Text(text = "Продолжить")
         }
     }
-
 }
 
 @Preview(showBackground = true)
