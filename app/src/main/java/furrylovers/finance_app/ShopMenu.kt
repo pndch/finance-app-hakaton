@@ -3,6 +3,7 @@ package furrylovers.finance_app
 import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +38,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -45,12 +45,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import furrylovers.finance_app.ui.theme.MainTheme
 import kotlinx.coroutines.flow.compose
+import java.io.File
 
 data class ShopItem(
     val id: Int,
@@ -98,7 +101,8 @@ fun ShopScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFFFF8E1))
-            .statusBarsPadding()
+            .statusBarsPadding(),
+        horizontalAlignment = Alignment.End
     ) {
         BalanceBar(balance = balance)
 
@@ -158,35 +162,53 @@ fun ShopScreen(
 }
 
 @Composable
-private fun BalanceBar(balance: Int) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFFFE0B2))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+private fun BalanceBar(
+    balance: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .padding(top = 16.dp, end = 16.dp)
+            .background(Color(0xFFFFF6E0).copy(alpha = 0.92f), RoundedCornerShape(20.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+
+        Box(
+            modifier = Modifier
+                .size(35.dp)
+                .background(Color(0xFFFFC107), CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Магазин",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF5D4037)
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CoinBadge()
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Баланс: $balance",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF5D4037)
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokePx = 15F
+                val radius = (size.minDimension - strokePx) / 2f
+                val center = Offset(size.width / 2f, size.height / 2f)
+
+
+                drawCircle(
+                    color = Color(0xFFFFEB3B),
+                    radius = radius,
+                    center = center,
+                    style = Stroke(width = strokePx)
                 )
             }
+
+            Text(
+                text = "F",
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
+        Spacer(modifier = Modifier.size(8.dp))
+        Text(
+            text = balance.toString(),
+            color = Color(0xFF2E2408),
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -303,19 +325,17 @@ private fun ShopItemCard(
     }
 }
 
-@Preview(showBackground = true, widthDp = 380, heightDp = 720)
+@Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
-private fun ShopScreenPreview() {
-    val context = LocalContext.current
-    val app = context.applicationContext as Application
-    val fakeViewModel = remember {
-        GameViewModel(app).apply {
-            // ⚠️ только если у тебя есть публичный сеттер или update()
-            update { Data(money = 9999) }
+fun ShopScreenPreview() {
+    val fakeApp = remember {
+        object : Application() {
+            override fun getFilesDir(): File {
+                return File(System.getProperty("java.io.tmpdir") ?: ".")
+            }
         }
     }
-
-    MaterialTheme {
-        ShopScreen(viewModel = fakeViewModel)
+    MainTheme() {
+        ShopScreen(viewModel = GameViewModel(fakeApp))
     }
 }

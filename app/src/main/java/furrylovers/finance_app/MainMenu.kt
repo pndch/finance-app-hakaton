@@ -148,20 +148,25 @@ private fun BottomPanel(
     onDestinationChange: (AppDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    //фон панели
+    val panelColor = Color(0xFFFFF6E0).copy(alpha = 0.92f)
+
+    val contentInactive = Color(0xFF5A4A1F).copy(alpha = 0.55f)
+    val contentActive = Color(0xFF2E2408)
+    val activeBg = Color(0xFF2E2408).copy(alpha = 0.08f)
+
     Column(
         modifier = modifier
-            // фон самой панели — чуть светлее корня, с блюром-эффектом через alpha
-            .background(Color(0xFF1A1A20))
-            // тонкая верхняя линия-разделитель
+            .background(panelColor)
             .drawBehind {
                 drawLine(
-                    color = Color.White.copy(alpha = 0.08f),
+                    color = Color(0xFF2E2408).copy(alpha = 0.08f),
                     start = Offset(0f, 0f),
                     end = Offset(size.width, 0f),
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .navigationBarsPadding() // чтобы не залезало под системный бар
+            .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier
@@ -176,6 +181,9 @@ private fun BottomPanel(
                     destination = destination,
                     selected = selected,
                     onClick = { onDestinationChange(destination) },
+                    activeBg = activeBg,
+                    contentActive = contentActive,
+                    contentInactive = contentInactive,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -188,15 +196,17 @@ private fun BottomPanelButton(
     destination: AppDestinations,
     selected: Boolean,
     onClick: () -> Unit,
+    activeBg: Color,
+    contentActive: Color,
+    contentInactive: Color,
     modifier: Modifier = Modifier
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (selected) Color.White.copy(alpha = 0.12f)
-        else Color.Transparent,
+        targetValue = if (selected) activeBg else Color.Transparent,
         label = "bg"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.55f),
+        targetValue = if (selected) contentActive else contentInactive,
         label = "content"
     )
 
@@ -308,7 +318,7 @@ private fun MainMenuContent(data: Data) {
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
                     .padding(top = 16.dp, end = 16.dp)
-                    .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                    .background(Color(0xFFFFF6E0).copy(alpha = 0.92f), RoundedCornerShape(20.dp))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -344,7 +354,7 @@ private fun MainMenuContent(data: Data) {
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(
                     text = data.money.toString(),
-                    color = Color.White,
+                    color = Color(0xFF2E2408),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
