@@ -1,5 +1,6 @@
 package furrylovers.finance_app
 
+import android.R.attr.bottom
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -247,61 +248,10 @@ private fun BottomPanelButton(
 }
 
 
-//    val pagerState = rememberPagerState(pageCount = { 3 })
-//    Box(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color.Black)
-//    ) {
-//        HorizontalPager(
-//            state = pagerState,
-//            modifier = Modifier.fillMaxSize(),
-//            beyondViewportPageCount = 1 //сколько держит панелек в памяти
-//        ) { page ->
-//            // 0.0 - в фокусе, 1.0 - ушла влево, -1.0 - пришла справа
-//            val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
-//
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .graphicsLayer {
-//                        if (pageOffset > 0) {
-//                            // уход под другую
-//                            val scale = 0.85f + (1f - 0.85f) * (1f - pageOffset.coerceIn(0f, 1f))
-//                            scaleX = scale
-//                            scaleY = scale
-//                            alpha = 1f - pageOffset.coerceIn(0f, 1f)
-//                            translationX = pageOffset * size.width * 0.5f
-//                        } else {
-//                            // накладка сверъу
-//                            translationX = 0f
-//                            scaleX = 1f
-//                            scaleY = 1f
-//                            alpha = 1f
-//                        }
-//                    }
-//                    .zIndex(if (pageOffset > 0) 0f else 1f)
-//                    .clip(RoundedCornerShape(if (abs(pageOffset) > 0.001f) 24.dp else 0.dp))
-//            ) {
-//                if (page == 0) {
-//                    MainMenuContent(data)
-//                }
-//                if (page == 1){
-//                    ShopScreen(viewModel)
-//                }
-//                if (page==2) {
-//                    AdultMenu()
-//                }
-//
-//                //надо норм сделать
-//            }
-//        }
-//    }
+
 
 @Composable
 private fun MainMenuContent(data: Data) {
-//    val context = LocalContext.current
-//    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
 
     Box(modifier = Modifier.fillMaxSize()) {
             Image(
@@ -367,13 +317,13 @@ private fun MainMenuContent(data: Data) {
                     .padding(bottom = 30.dp)
             )
 
-            Row(
+            Column(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.TopEnd)
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                   .padding(top = 50.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Parameters.entries.forEachIndexed { index, parameters ->
                     LiquidCircleProgress(
@@ -426,7 +376,7 @@ fun LiquidCircleProgress(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokePx = strokeWidth.toPx()
-            val radius = (size.minDimension - strokePx) / 2f
+            val radius = (size.minDimension - strokePx) / 2.3f
             val center = Offset(size.width / 2f, size.height / 2f)
 
             clipPath(Path().apply { addOval(Rect(center, radius)) }) {
@@ -482,7 +432,8 @@ fun CharacterLayer(modifier: Modifier = Modifier) {
             painter = painterResource(R.drawable.character), // ← твоя картинка персонажа
             contentDescription = null,
             modifier = Modifier
-                .size(620.dp),
+                .size(620.dp)
+                .padding(end = 20.dp), //говнокод
 
             // ── МЕСТО 1а: сюда вешаем idle-трансформации ──
             // ── МЕСТО 2б: сюда вешаем трансформации по actionTrigger ──
