@@ -59,12 +59,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import furrylovers.finance_app.ui.theme.SuccessGreen
 
 @Composable
 fun QuestMenu( viewModel: GameViewModel ) {
     val context = LocalContext.current
-    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
+    //val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
+    val data by viewModel.data.collectAsStateWithLifecycle()
     MainTheme() {
         QuestMenuContent(data)
     }

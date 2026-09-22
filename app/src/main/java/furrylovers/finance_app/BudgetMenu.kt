@@ -28,12 +28,15 @@ import androidx.compose.ui.unit.dp
 import android.R.attr.height
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Devices
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun BudgetMenu( viewModel: GameViewModel ) {
     val context = LocalContext.current
-    val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
+    val data by viewModel.data.collectAsStateWithLifecycle()
+    //val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
     MainTheme() {
         QuestMenuContent(data)
     }

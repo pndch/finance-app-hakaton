@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -15,13 +16,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -43,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -106,31 +113,126 @@ fun MainMenu(viewModel: GameViewModel) {
     val data by viewModel.data.collectAsStateWithLifecycle()
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
 
-    //MainMenuContent(data)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF101014)) // фон корня, склеит контент и панель
+    ) {
+        // Контент занимает всё свободное место над панелью
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            when (currentDestination) {
+                AppDestinations.SHOP -> ShopScreen(viewModel)
+                AppDestinations.QUESTS -> QuestMenu(viewModel)
+                AppDestinations.HOME -> MainMenuContent(data)
+                AppDestinations.BUDGET -> BudgetMenu(viewModel)
+                AppDestinations.PROFILE -> AdultMenu()
+            }
+        }
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            AppDestinations.entries.forEach {
-                item(
-                    icon = {
-                        Icon(
-                            painterResource(it.icon),
-                            contentDescription = ""
-                        )
-                    },
-                    selected = it == currentDestination,
-                    onClick = { currentDestination = it }
+        // Панель снизу — своя, не накрывает контент
+        BottomPanel(
+            currentDestination = currentDestination,
+            onDestinationChange = { currentDestination = it },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun BottomPanel(
+    currentDestination: AppDestinations,
+    onDestinationChange: (AppDestinations) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            // фон самой панели — чуть светлее корня, с блюром-эффектом через alpha
+            .background(Color(0xFF1A1A20))
+            // тонкая верхняя линия-разделитель
+            .drawBehind {
+                drawLine(
+                    color = Color.White.copy(alpha = 0.08f),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+            .navigationBarsPadding() // чтобы не залезало под системный бар
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppDestinations.entries.forEach { destination ->
+                val selected = destination == currentDestination
+                BottomPanelButton(
+                    destination = destination,
+                    selected = selected,
+                    onClick = { onDestinationChange(destination) },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun BottomPanelButton(
+    destination: AppDestinations,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bgColor by animateColorAsState(
+        targetValue = if (selected) Color.White.copy(alpha = 0.12f)
+        else Color.Transparent,
+        label = "bg"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.55f),
+        label = "content"
+    )
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(bgColor)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        when (currentDestination) {
-            AppDestinations.SHOP -> ShopScreen(viewModel)
-            AppDestinations.QUESTS -> QuestMenu(viewModel)
-            AppDestinations.HOME -> MainMenuContent(data)
-            AppDestinations.BUDGET -> BudgetMenu(viewModel)
-            AppDestinations.PROFILE -> AdultMenu()
-        }
+        Icon(
+            painter = painterResource(destination.icon),
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(26.dp)
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = when (destination) {
+                AppDestinations.SHOP -> "Магазин"
+                AppDestinations.QUESTS -> "Квесты"
+                AppDestinations.HOME -> "Главная"
+                AppDestinations.BUDGET -> "Бюджет"
+                AppDestinations.PROFILE -> "Родителям"
+            },
+            fontSize = 11.sp,
+            color = contentColor,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            maxLines = 1
+        )
     }
 }
 
@@ -199,6 +301,7 @@ private fun MainMenuContent(data: Data) {
                 contentScale = ContentScale.Crop
             )
 
+
             // Деньги
             Row(
                 modifier = Modifier
@@ -258,20 +361,20 @@ private fun MainMenuContent(data: Data) {
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(bottom = 40.dp),
+                    .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-    //            Parameters.entries.forEachIndexed { index, parameters ->
-    //                LiquidCircleProgress(
-    //                    index = index,
-    //                    parameters = parameters,
-    //                    progress = data.petNeeds[index]/100F,
-    //                    modifier = Modifier
-    //                        .size(110.dp)
-    //                        .padding(top = 30.dp, start = 20.dp)
-    //                )
-    //            }
+                Parameters.entries.forEachIndexed { index, parameters ->
+                    LiquidCircleProgress(
+                        index = index,
+                        parameters = parameters,
+                        progress = data.petNeeds[index]/100F,
+                        modifier = Modifier
+                            .size(110.dp)
+                            .padding(top = 30.dp, start = 20.dp)
+                    )
+                }
         }
     }
 }
