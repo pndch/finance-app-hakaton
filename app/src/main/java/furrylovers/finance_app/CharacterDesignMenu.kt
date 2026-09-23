@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import furrylovers.finance_app.ui.theme.MainTheme
 import android.content.Intent
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Button
 import androidx.compose.ui.Alignment
@@ -27,6 +26,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import android.content.Context
 import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import java.nio.file.WatchEvent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 
 class CharacterDesignActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,163 +50,97 @@ class CharacterDesignActivity : ComponentActivity() {
 
 @Composable
 fun CharacterDesign() {
+    CharacterDesignContent()
+}
+
+@Composable
+fun CharacterDesignContent() {
+    var currentCharacter: Int by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     val activity = context as? Activity
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 48.dp), // тут тоже потыкаться надо камера текст перекрывает иногда
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.Top
+//            .padding(all = 16.dp)
+//            .padding(top = 96.dp),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "Выбери понравившегося питомца",
+        Image(
+            painter = painterResource(R.drawable.background_chardesign),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 48.dp), // тут тоже потыкаться надо камера текст перекрывает иногда
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(
+                text = "Выбери понравившегося питомца",
             )
-    }
-
-
-    //Контейнер с выбором персонажа
-    //Добавить нормальные картинки + отредактировать параметры вообщем
-    //Логика сделана
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(all = 16.dp)
-            .padding(top = 96.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.Top
-        ) {
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 1) }
-            ) {
-                Text("1")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 2)}
-            ) {
-                Text("2")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 3)}
-            ) {
-                Text("3")
-            }
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.Top
-        ) {
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 4)}
-            ) {
-                Text("4")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 5)}
-            ) {
-                Text("5")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 6)}
-            ) {
-                Text("6")
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.Top
-        ) {
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 7)}
-            ) {
-                Text("7")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 8)}
-            ) {
-                Text("8")
-            }
-            Button(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .height(100.dp)
-                    .width(100.dp),
-                shape = RoundedCornerShape(16.dp),
-                onClick = { Data().changePetType(context, 9)}
-            ) {
-                Text("9")
-            }
-        }
-
-        //
-        // ВСТАВИТЬ КАРТИНКУ ВЫБРАННОГО В ДАННЫЙ МОМЕНТ ПЕРСОНАЖА
-        //
         Box(
             modifier = Modifier
-                .padding(top = 48.dp),
+                .fillMaxSize()
+                .padding(top = 100.dp),
             contentAlignment = Alignment.Center
-        ) {
-            Text(text = "**Тут вставь картинку выбранного в данный момент перса**")
+        )
+        {
+            Image(
+                painter = painterResource(characters[currentCharacter]),
+                contentDescription = null,
+                modifier = Modifier
+                    .height(500.dp)
+                    .width(150.dp)
+                    .padding(bottom = 100.dp),
+                contentScale = ContentScale.FillBounds
+            )
         }
-        //
-        // ВСТАВИТЬ КАРТИНКУ ВЫБРАННОГО В ДАННЫЙ МОМЕНТ ПЕРСОНАЖА
-        //
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 448.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            Button(
+                modifier = Modifier
+                    .padding(start = 15.dp),
+
+                onClick = {
+                    currentCharacter = if ( currentCharacter == 0) {
+                        characters.size - 1
+                    } else {
+                        currentCharacter - 1
+                    }
+                }
+            ) {
+                Text(text = "<")
+            }
+
+            Button(
+                modifier = Modifier
+                    .padding(end = 15.dp),
+
+                onClick = {
+                    currentCharacter = if ( currentCharacter == characters.size - 1) {
+                        0
+                    } else {
+                        currentCharacter + 1
+                    }
+                }
+            ) {
+                Text(text = ">")
+            }
+        }
     }
     Column(
         modifier = Modifier
@@ -210,20 +153,21 @@ fun CharacterDesign() {
                 .padding(bottom = 24.dp), //тут вот с этим поиграться надо иногда чот она слишком низко и там какие то кнопки устройства перекрывают
 
             onClick = {
+                Data().changePetType(context, currentCharacter)
                 Data().finishFirstStart(context)
                 context.startActivity(Intent(context, TitleScreenActivity::class.java))
                 activity?.finish()
             }
         ) {
-            Text(text = "Продолжить")
+            Text(text = "Сохранить")
         }
     }
 }
 
 @Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
-fun GreetingPreview() {
+fun CharacterDesignPreview() {
     MainTheme {
-        CharacterDesign()
+        CharacterDesignContent()
     }
 }

@@ -5,12 +5,24 @@ import android.content.Context
 import android.text.BoringLayout
 import java.io.File
 
+val characters: List<Int> = listOf(
+    R.drawable.char0,
+    R.drawable.char1,
+    R.drawable.char2,
+    R.drawable.char3,
+    R.drawable.char4,
+    R.drawable.char5,
+    R.drawable.char6,
+    R.drawable.char7,
+    R.drawable.char8,
+)
+
 @Serializable
 data class Data(
     var firstStart: Boolean = true,
 
     var petName: String = "PetName",
-    var petType: Byte = 1,
+    var petType: Int = 0,
     var petStage: Int = 1,
     var petNeeds: MutableList<Int> = mutableListOf(50,50,50), //Food, Care, Mood
 
@@ -35,7 +47,7 @@ data class Data(
         data.petName = name
         DoJson(context).saveData(data)
     }
-    fun changePetType(context: Context, type: Byte) {
+    fun changePetType(context: Context, type: Int) {
         val data = DoJson(context).loadData()
         data.petType = type
         DoJson(context).saveData(data)

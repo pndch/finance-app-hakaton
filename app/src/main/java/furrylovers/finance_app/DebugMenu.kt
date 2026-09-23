@@ -74,6 +74,8 @@ fun AdultMenu() {
         Button(
             onClick = {
                 DoJson(context).deleteData()
+                context.startActivity(Intent(context, CharacterNameActivity::class.java))
+                activity?.finish()
             }
         ) {
             Text(text = "Сбросить прогресс")

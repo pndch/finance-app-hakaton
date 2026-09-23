@@ -26,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import furrylovers.finance_app.ui.theme.MainTheme
 
-class MainActivity : ComponentActivity() { //точка входа в программу
+class CharacterNameActivity : ComponentActivity() { //точка входа в программу
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

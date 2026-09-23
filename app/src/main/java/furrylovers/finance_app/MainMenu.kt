@@ -314,7 +314,8 @@ private fun MainMenuContent(data: Data) {
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxSize()
-                    .padding(bottom = 30.dp)
+                    .padding(bottom = 30.dp),
+                characterType = data.petType
             )
 
             Column(
@@ -406,7 +407,7 @@ fun LiquidCircleProgress(
 }
 
 @Composable
-fun CharacterLayer(modifier: Modifier = Modifier) {
+fun CharacterLayer(modifier: Modifier = Modifier, characterType: Int) {
     // ── МЕСТО 1: базовое «дыхание» (постоянная лёгкая анимация) ──
     val idleTransition = rememberInfiniteTransition(label = "char_idle")
     // val idleScale by idleTransition.animateFloat(...)
@@ -429,7 +430,7 @@ fun CharacterLayer(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(R.drawable.character), // ← твоя картинка персонажа
+            painter = painterResource(characters[characterType]), // ← твоя картинка персонажа
             contentDescription = null,
             modifier = Modifier
                 .size(620.dp)
