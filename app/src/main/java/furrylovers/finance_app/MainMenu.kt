@@ -130,7 +130,7 @@ fun MainMenu(viewModel: GameViewModel) {
                 AppDestinations.QUESTS -> QuestMenu(viewModel)
                 AppDestinations.HOME -> MainMenuContent(data)
                 AppDestinations.BUDGET -> BudgetMenu(viewModel)
-                AppDestinations.PROFILE -> AdultMenu()
+                AppDestinations.PROFILE -> ProfileMenu(viewModel)
             }
         }
 

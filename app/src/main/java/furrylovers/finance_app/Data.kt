@@ -17,6 +17,18 @@ val characters: List<Int> = listOf(
     R.drawable.char8,
 )
 
+val characterThumbnails: List<Int> = listOf(
+    R.drawable.char0_thumbnail,
+    R.drawable.char1_thumbnail,
+    R.drawable.char2_thumbnail,
+    R.drawable.char3_thumbnail,
+    R.drawable.char4_thumbnail,
+    R.drawable.char5_thumbnail,
+    R.drawable.char6_thumbnail,
+    R.drawable.char7_thumbnail,
+    R.drawable.char8_thumbnail,
+)
+
 @Serializable
 data class Data(
     var firstStart: Boolean = true,
@@ -26,13 +38,16 @@ data class Data(
     var petStage: Int = 1,
     var petNeeds: MutableList<Int> = mutableListOf(50,50,50), //Food, Care, Mood
 
-    var money: Int = 500, //базовое кол-во
-    var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0,0,0,0,0) //вписать сюда чо тут есть я хз
+    var money: Int = 500,
+    var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0,0,0,0,0),
+
+    //Добавить статистики и подвзязать к функция изменения
+    var questCompleted: Int = 0,
+    var targetPassed: Int = 0,
+    var monetSpened: Int = 0,
+
 
 ) {
-    //
-//    НУЖНО БУДЕТ ПЕРЕДЕЛАТЬ ЧТОБЫ ВСЯКАЯ ФИГНЯ ХРАНИЛАСЬ В ОЗУ И СОХРАНЯЛАСЬ ТОЛЬКО КОГДА ПРИЛОЖЕНИЕ СВОРАЧИВАЕТСЯ
-//
     fun isFirstStart(context: Context): Boolean {
         val data = DoJson(context).loadData()
         return data.firstStart
@@ -73,7 +88,4 @@ data class Data(
         data.petNeeds = mutableListOf(data.petNeeds[0]+food, data.petNeeds[1]+care, data.petNeeds[2]+mood)
         DoJson(context).saveData(data)
     }
-
-    //Сюда передаем не конкретное значение а его изменение
-
 }

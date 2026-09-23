@@ -57,6 +57,12 @@
             android:label="@string/title_activity_main_menu_new"
             android:theme="@style/Theme.Financeapp"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ProfileMenu"
+            android:exported="false"
+            android:label="@string/title_activity_profile_menu"
+            android:theme="@style/Theme.Financeapp"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
