@@ -1,6 +1,5 @@
 package furrylovers.finance_app
 
-import android.R.attr.bottom
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

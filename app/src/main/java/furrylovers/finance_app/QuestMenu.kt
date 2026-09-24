@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import furrylovers.finance_app.ui.theme.MainTheme
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -53,17 +52,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import furrylovers.finance_app.ui.theme.SuccessGreen
 
 @Composable
-fun QuestMenu( viewModel: GameViewModel ) {
-    //val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
+fun QuestMenu(viewModel: GameViewModel) {
     val data by viewModel.data.collectAsStateWithLifecycle()
-    MainTheme() {
-        QuestMenuContent(data)
+    MainTheme {
+        QuestMenuContent(
+            data = data,
+            onQuestClick = { questId ->
+                viewModel.changeQuestCompletion(questId)
+            }
+        )
     }
 }
 
 @Composable
-fun QuestMenuContent( data: Data ) {
-    val context = LocalContext.current
+fun QuestMenuContent(
+    data: Data,
+    onQuestClick: (Int) -> Unit = {}
+) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val questCategories = QuestCategory.values()
 
@@ -79,7 +84,6 @@ fun QuestMenuContent( data: Data ) {
                 .padding(top = 50.dp)
                 .height(150.dp)
                 .fillMaxWidth(),
-
             contentScale = ContentScale.Crop
         )
 
@@ -105,8 +109,7 @@ fun QuestMenuContent( data: Data ) {
             }
         }
 
-        //ИЗ ЗА ЭТОГО ПРЕВЬЮ НЕ РАБОТАЕТ
-        val itemsForCategory = JsonQuest(context).loadQuest().quests.filter { it.questStatus == questCategories[selectedTab] }//questsItems.filter { it.questStatus == questCategories[selectedTab] }
+        val itemsForCategory = data.quests.filter { it.questStatus == questCategories[selectedTab] }
 
         LazyColumn(
             modifier = Modifier
@@ -119,7 +122,7 @@ fun QuestMenuContent( data: Data ) {
                 QuestItemCard(
                     item = item,
                     onBuyClick = {
-
+                        onQuestClick(item.id)
                     }
                 )
             }
@@ -194,7 +197,7 @@ private fun QuestItemCard(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = "Купить",
+                    text = "Выполнить",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -205,24 +208,19 @@ private fun QuestItemCard(
 
 @Composable
 private fun CoinBadge() {
-    // Деньги
     Row(
-        modifier = Modifier
-            .statusBarsPadding()
+        modifier = Modifier.statusBarsPadding()
     ) {
-
         Box(
             modifier = Modifier
                 .size(35.dp)
                 .background(Color(0xFFFFC107), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val strokePx = 15F
                 val radius = (size.minDimension - strokePx) / 2f
                 val center = Offset(size.width / 2f, size.height / 2f)
-
 
                 drawCircle(
                     color = Color(0xFFFFEB3B),
@@ -245,7 +243,7 @@ private fun CoinBadge() {
 @Preview(showBackground = true, device = Devices.PIXEL_9)
 @Composable
 fun QuestMenuPreview() {
-    MainTheme() {
+    MainTheme {
         QuestMenuContent(Data())
     }
 }

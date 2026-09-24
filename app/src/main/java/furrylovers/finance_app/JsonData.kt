@@ -1,14 +1,16 @@
 package furrylovers.finance_app
+
 import kotlinx.serialization.json.Json
 import android.content.Context
 import java.io.File
 
-class JsonData(private val context: Context) { //переименовать как нибудь
-    private val path = File(context.filesDir,"data.json")
+class JsonData(private val context: Context) {
+    private val path = File(context.filesDir, "data.json")
 
     private val json = Json {
         prettyPrint = true
         encodeDefaults = true
+        ignoreUnknownKeys = true
     }
 
     fun saveData(data: Data) {
@@ -16,32 +18,39 @@ class JsonData(private val context: Context) { //переименовать ка
     }
 
     fun loadData(): Data {
-        try {
+        return try {
             if (path.exists()) {
-                return json.decodeFromString<Data>(path.readText())
+                val data = json.decodeFromString<Data>(path.readText())
+                if (data.quests.isEmpty()) {
+                    val updated = data.copy(quests = questsItems.toMutableList())
+                    saveData(updated)
+                    updated
+                } else {
+                    data
+                }
             } else {
-                JsonData(context).saveData(Data())
-                return json.decodeFromString<Data>(path.readText())
+                val initial = Data(quests = questsItems.toMutableList())
+                saveData(initial)
+                initial
             }
         } catch (e: Exception) {
-            JsonData(context).saveData(Data())
-            return json.decodeFromString<Data>(path.readText())
+            val initial = Data(quests = questsItems.toMutableList())
+            saveData(initial)
+            initial
         }
     }
 
-    //использовать только для отладки / демонстрации проекта
+    // Использовать только для отладки / демонстрации проекта
     fun loadDataFromFile(filePath: File): Data {
-        val data = json.decodeFromString<Data>(filePath.readText())
-        return data
+        return json.decodeFromString<Data>(filePath.readText())
     }
 
-    //использовать только для отладки
     fun saveDataToFile(data: Data, filePath: File) {
         filePath.writeText(json.encodeToString(Data.serializer(), data))
     }
 
-    fun deleteData(){
-        val newData = Data()
-        path.writeText(json.encodeToString(Data.serializer(), newData))
+    fun deleteData() {
+        val newData = Data(quests = questsItems.toMutableList())
+        saveData(newData)
     }
 }

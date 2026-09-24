@@ -11,7 +11,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val saver = JsonData(app)
 
     private val _data = MutableStateFlow(
-        try { saver.loadData() } catch (e: Exception) { Data() }
+        try {
+            val loaded = saver.loadData()
+            if (loaded.quests.isEmpty()) {
+                val initialized = loaded.copy(quests = questsItems.toMutableList())
+                saver.saveData(initialized)
+                initialized
+            } else {
+                loaded
+            }
+        } catch (e: Exception) {
+            val initial = Data(quests = questsItems.toMutableList())
+            saver.saveData(initial)
+            initial
+        }
     )
     val data: StateFlow<Data> = _data.asStateFlow()
 
@@ -21,14 +34,53 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         saver.saveData(newData)
     }
 
-    //пополнение
+    // Пополнение / списание средств
     fun changeMoney(delta: Int) = update { it.copy(money = it.money + delta) }
 
     fun buyItem(itemId: Int, price: Int) = update { d ->
         d.copy(
             money = d.money - price,
-            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 },
-            //petNeeds = { }
+            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 }
         )
+    }
+
+    // Функционал квестов (ранее был в JsonQuest)
+    fun initQuests() = update { it.copy(quests = questsItems.toMutableList()) }
+
+    fun addQuest(quest: Quests) = update { d ->
+        d.copy(quests = (d.quests + quest).toMutableList())
+    }
+
+    fun changeQuestCompletion(id: Int) = update { d ->
+        val updatedQuests = d.quests.map { q ->
+            if (q.id == id) {
+                val newStatus = if (q.questStatus == QuestCategory.UNCOMPLETED) {
+                    QuestCategory.COMPLETED
+                } else {
+                    QuestCategory.UNCOMPLETED
+                }
+                q.copy(questStatus = newStatus)
+            } else {
+                q
+            }
+        }.toMutableList()
+        d.copy(quests = updatedQuests)
+    }
+
+    fun resetData() = update {
+        val newData = Data(quests = questsItems.toMutableList())
+        newData
+    }
+
+    fun finishFirstStart() = update { d ->
+        d.copy(firstStart = false)
+    }
+
+    fun setPetName(name: String) = update { d ->
+        d.copy(petName = name)
+    }
+
+    fun setPetType(type: Int) = update { d ->
+        d.copy(petType = type)
     }
 }
