@@ -1,15 +1,10 @@
 package furrylovers.finance_app
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import furrylovers.finance_app.ui.theme.MainTheme
@@ -21,11 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import furrylovers.finance_app.Data
-import furrylovers.finance_app.DoJson
-import furrylovers.finance_app.R
 import androidx.compose.ui.unit.dp
-import android.R.attr.height
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +36,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,7 +54,6 @@ import furrylovers.finance_app.ui.theme.SuccessGreen
 
 @Composable
 fun QuestMenu( viewModel: GameViewModel ) {
-    val context = LocalContext.current
     //val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
     val data by viewModel.data.collectAsStateWithLifecycle()
     MainTheme() {
@@ -74,6 +63,7 @@ fun QuestMenu( viewModel: GameViewModel ) {
 
 @Composable
 fun QuestMenuContent( data: Data ) {
+    val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val questCategories = QuestCategory.values()
 
@@ -115,7 +105,8 @@ fun QuestMenuContent( data: Data ) {
             }
         }
 
-        val itemsForCategory = questsItems.filter { it.questStatus == questCategories[selectedTab] }
+        //ИЗ ЗА ЭТОГО ПРЕВЬЮ НЕ РАБОТАЕТ
+        val itemsForCategory = JsonQuest(context).loadQuest().quests.filter { it.questStatus == questCategories[selectedTab] }//questsItems.filter { it.questStatus == questCategories[selectedTab] }
 
         LazyColumn(
             modifier = Modifier

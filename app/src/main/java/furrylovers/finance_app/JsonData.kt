@@ -1,12 +1,9 @@
 package furrylovers.finance_app
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import android.content.Context
-import android.text.BoringLayout
 import java.io.File
 
-class DoJson(private val context: Context) { //переименовать как нибудь
-
+class JsonData(private val context: Context) { //переименовать как нибудь
     private val path = File(context.filesDir,"data.json")
 
     private val json = Json {
@@ -23,11 +20,11 @@ class DoJson(private val context: Context) { //переименовать как
             if (path.exists()) {
                 return json.decodeFromString<Data>(path.readText())
             } else {
-                DoJson(context).saveData(Data())
+                JsonData(context).saveData(Data())
                 return json.decodeFromString<Data>(path.readText())
             }
         } catch (e: Exception) {
-            DoJson(context).saveData(Data())
+            JsonData(context).saveData(Data())
             return json.decodeFromString<Data>(path.readText())
         }
     }

@@ -155,6 +155,7 @@ fun CharacterDesignContent() {
             onClick = {
                 Data().changePetType(context, currentCharacter)
                 Data().finishFirstStart(context)
+                JsonQuest(context).initQuest()
                 context.startActivity(Intent(context, TitleScreenActivity::class.java))
                 activity?.finish()
             }

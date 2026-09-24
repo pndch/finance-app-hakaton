@@ -1,7 +1,6 @@
 package furrylovers.finance_app
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val saver = DoJson(app)
+    private val saver = JsonData(app)
 
     private val _data = MutableStateFlow(
         try { saver.loadData() } catch (e: Exception) { Data() }

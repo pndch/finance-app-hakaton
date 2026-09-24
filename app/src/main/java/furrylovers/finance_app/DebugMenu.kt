@@ -73,7 +73,7 @@ fun AdultMenu() {
 
         Button(
             onClick = {
-                DoJson(context).deleteData()
+                JsonData(context).deleteData()
                 context.startActivity(Intent(context, CharacterNameActivity::class.java))
                 activity?.finish()
             }
