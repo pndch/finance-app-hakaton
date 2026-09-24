@@ -27,6 +27,13 @@ val characterThumbnails: List<Int> = listOf(
 )
 
 @Serializable
+data class Goal(
+    var goalName: String = "Name",
+    var goalSize: Int = 0,
+    var isComplete: Boolean = false
+) { }
+
+@Serializable
 data class Data(
     var firstStart: Boolean = true,
 
@@ -36,6 +43,7 @@ data class Data(
     var petNeeds: MutableList<Int> = mutableListOf(50,50,50), //Food, Care, Mood
 
     var money: Int = 500,
+    var bank: Int = 0,
     var inventory: MutableList<Int> = mutableListOf(0,0,0,0,0,0,0,0,0,0,0,0),
 
     //Добавить статистики и подвзязать к функция изменения
@@ -43,7 +51,8 @@ data class Data(
     var targetPassed: Int = 0,
     var monetSpened: Int = 0,
 
-
+    var budget: MutableList<Int> = mutableListOf(0,0,0), //Mandatory / Non-mandatory / Care or smth
+    var goals: MutableList<Goal> = emptyList<Goal>().toMutableList()
 ) {
     fun isFirstStart(context: Context): Boolean {
         val data = JsonData(context).loadData()
@@ -83,6 +92,12 @@ data class Data(
     fun changePetNeeds(context: Context, food: Int = 0, care: Int = 0, mood: Int = 0) {
         val data = JsonData(context).loadData()
         data.petNeeds = mutableListOf(data.petNeeds[0]+food, data.petNeeds[1]+care, data.petNeeds[2]+mood)
+        JsonData(context).saveData(data)
+    }
+
+    fun setBudget(context: Context, budget: MutableList<Int>) {
+        val data = JsonData(context).loadData()
+        data.budget = budget
         JsonData(context).saveData(data)
     }
 }
