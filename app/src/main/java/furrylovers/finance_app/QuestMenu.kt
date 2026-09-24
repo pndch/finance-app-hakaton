@@ -119,12 +119,19 @@ fun QuestMenuContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(itemsForCategory, key = { it.id }) { item ->
-                QuestItemCard(
-                    item = item,
-                    onBuyClick = {
-                        onQuestClick(item.id)
-                    }
-                )
+                if (selectedTab == 0){
+                    QuestItemCard(
+                        item = item,
+                        onBuyClick = {
+                            onQuestClick(item.id)
+                        }
+                    )
+                } else{
+                    CompletedQuestItemCard(
+                        item = item
+                    )
+                }
+
             }
 
             item { Spacer(modifier = Modifier.height(16.dp)) }
@@ -202,6 +209,63 @@ private fun QuestItemCard(
                     fontSize = 14.sp
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CompletedQuestItemCard(
+    item: Quests
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_favorite),
+                    contentDescription = null,
+                    tint = Color(0xFF6D4C41),
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.questName,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF3E2723)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CoinBadge()
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = item.questDescription,
+                        fontSize = 14.sp,
+                        color = Color(0xFF6D4C41)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
         }
     }
 }

@@ -60,7 +60,10 @@ data class ShopItem(
     val name: String,
     val price: Int,
     val category: ShopCategory,
-    val placeholderColor: Color = Color(0xFFFFE0B2)
+    val placeholderColor: Color = Color(0xFFFFE0B2),
+    val food: Int,
+    val care: Int,
+    val happiness: Int
 )
 
 enum class ShopCategory(val title: String) {
@@ -70,18 +73,14 @@ enum class ShopCategory(val title: String) {
 }
 
 private val demoShopItems = listOf(
-    ShopItem(1, "Яблоко", 50, ShopCategory.MANDATORY, Color(0xFFFFCDD2)),
-    ShopItem(2, "Молоко", 80, ShopCategory.MANDATORY, Color(0xFFB3E5FC)),
-    ShopItem(3, "Хлеб", 60, ShopCategory.MANDATORY, Color(0xFFFFE0B2)),
-    ShopItem(4, "Рыба", 150, ShopCategory.MANDATORY, Color(0xFFB2DFDB)),
-    ShopItem(5, "Красная кепка", 200, ShopCategory.OPTIONAL, Color(0xFFFFAB91)),
-    ShopItem(6, "Синяя футболка", 250, ShopCategory.OPTIONAL, Color(0xFF90CAF9)),
-    ShopItem(7, "Кошачья мята", 120, ShopCategory.OPTIONAL, Color(0xFFC5E1A5)),
-    ShopItem(8, "Очки", 180, ShopCategory.OPTIONAL, Color(0xFFB0BEC5)),
-    ShopItem(9, "Зубная щётка", 70, ShopCategory.CARE, Color(0xFFB3E5FC)),
-    ShopItem(10, "Зубная паста", 90, ShopCategory.CARE, Color(0xFFFFF9C4)),
-    ShopItem(11, "Мыло", 40, ShopCategory.CARE, Color(0xFFF8BBD0)),
-    ShopItem(12, "Шампунь", 110, ShopCategory.CARE, Color(0xFFD1C4E9))
+    ShopItem(1, "Яблоко", 50, ShopCategory.MANDATORY, Color(0xFFFFCDD2), food = 15, care = 0, happiness = 5),
+    ShopItem(2, "Молоко", 80, ShopCategory.MANDATORY, Color(0xFFB3E5FC), food = 20, care = 0, happiness = 5),
+    ShopItem(3, "Хлеб", 60, ShopCategory.MANDATORY, Color(0xFFFFE0B2), food = 25, care = 0, happiness = 3),
+    ShopItem(4, "Рыба", 150, ShopCategory.MANDATORY, Color(0xFFB2DFDB), food = 35, care = 0, happiness = 8),
+    ShopItem(5, "Зубная щётка", 70, ShopCategory.CARE, Color(0xFFB3E5FC), food = 0, care = 20, happiness = 5),
+    ShopItem(6, "Зубная паста", 90, ShopCategory.CARE, Color(0xFFFFF9C4), food = 0, care = 25, happiness = 5),
+    ShopItem(7, "Мыло", 40, ShopCategory.CARE, Color(0xFFF8BBD0), food = 0, care = 15, happiness = 3),
+    ShopItem(8, "Шампунь", 110, ShopCategory.CARE, Color(0xFFD1C4E9), food = 0, care = 30, happiness = 8)
 )
 
 @Composable
@@ -143,7 +142,10 @@ fun ShopScreen(
                     onBuyClick = {
                         if (balance >= item.price) {
                             balance -= item.price
-                            viewModel.buyItem(itemId = item.id, price = item.price)
+                            viewModel.buyItem(itemId = item.id,
+                                price = item.price,
+                                stats = mutableListOf(item.food, item.care, item.happiness))
+
 
 //                            Data().changeMoney(context, -item.price)
 //                            Data().changeInventory(context, item.id-1, 1)

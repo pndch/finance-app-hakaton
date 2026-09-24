@@ -34,11 +34,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 @Composable
 fun BudgetMenu( viewModel: GameViewModel ) {
-    val context = LocalContext.current
     val data by viewModel.data.collectAsStateWithLifecycle()
     //val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
     MainTheme() {
-        QuestMenuContent(data)
+        BudgetMenuContent(data)
     }
 }
 
@@ -118,16 +117,16 @@ fun BudgetMenuContent( data: Data ) {
                 .padding(top = 100.dp),
             onClick = {}
         ) { Text("Подтвердить")}
-//        Image(
-//            painter = painterResource(R.drawable.photo_budget),
-//            contentDescription = null,
-//            modifier = Modifier
-//                .padding(top = 50.dp)
-//                .height(150.dp)
-//                .fillMaxWidth(),
-//
-//            contentScale = ContentScale.Crop
-//        )
+        Image(
+            painter = painterResource(R.drawable.photo_budget),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(top = 50.dp)
+                .height(150.dp)
+                .fillMaxWidth(),
+
+            contentScale = ContentScale.Crop
+        )
         Text("")
     }
 }

@@ -46,7 +46,6 @@ fun ProfileMenuContent(data: Data) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 50.dp),
-            //horizontalArrangement = Arrangement.SpaceAround
         ) {
             Image(
                 painter = painterResource(characters[data.petType]),

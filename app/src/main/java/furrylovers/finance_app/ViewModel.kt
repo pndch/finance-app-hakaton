@@ -37,10 +37,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     // Пополнение / списание средств
     fun changeMoney(delta: Int) = update { it.copy(money = it.money + delta) }
 
-    fun buyItem(itemId: Int, price: Int) = update { d ->
+    fun buyItem(itemId: Int, price: Int, stats: MutableList<Int>) = update { d ->
         d.copy(
             money = d.money - price,
-            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 }
+            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 },
+            petNeeds = d.petNeeds.toMutableList().also {
+                it[0] += stats[0]
+                it[1] += stats[1]
+                it[2] += stats[2]
+            },
         )
     }
 

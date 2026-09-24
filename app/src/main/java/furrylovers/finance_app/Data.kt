@@ -43,7 +43,7 @@ data class Data(
     var petStage: Int = 1,
     var petNeeds: MutableList<Int> = mutableListOf(50, 50, 50), // Food, Care, Mood
 
-    var money: Int = 500,
+    var money: Int = 5000,
     var bank: Int = 0,
     var inventory: MutableList<Int> = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 
