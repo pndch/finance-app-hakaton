@@ -53,6 +53,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -71,6 +73,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.viewModelFactory
 import furrylovers.finance_app.ui.theme.MainTheme
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -118,7 +121,7 @@ fun MainMenu(viewModel: GameViewModel) {
             .fillMaxSize()
             .background(Color(0xFF101014)) // фон корня, склеит контент и панель
     ) {
-        // Контент занимает всё свободное место над панелью
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -261,6 +264,7 @@ private fun MainMenuContent(data: Data) {
             )
 
 
+
             // Деньги
             Row(
                 modifier = Modifier
@@ -312,8 +316,7 @@ private fun MainMenuContent(data: Data) {
             CharacterLayer(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .fillMaxSize()
-                    .padding(bottom = 30.dp),
+                    .fillMaxSize(),
                 characterType = data.petType
             )
 
@@ -336,6 +339,128 @@ private fun MainMenuContent(data: Data) {
                     )
                 }
         }
+
+        ExperienceBar(
+            data = data,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun ExperienceBar(
+    data: Data,
+    modifier: Modifier = Modifier
+) {
+    val completedQuests = data.quests.count { it.questStatus == QuestCategory.COMPLETED }
+    val questsPerLevel = 3
+    val xpPerQuest = 100
+    val level = data.petStage + (completedQuests / questsPerLevel)
+    val currentXp = (completedQuests % questsPerLevel) * xpPerQuest
+    val maxXp = questsPerLevel * xpPerQuest
+    val progressFraction = (currentXp.toFloat() / maxXp.toFloat()).coerceIn(0f, 1f)
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressFraction,
+        animationSpec = tween(durationMillis = 800, easing = LinearEasing),
+        label = "xpProgress"
+    )
+
+    val barBgColor = Color(0xFFFFF6E0).copy(alpha = 0.95f)
+
+    Column(
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Имя питомца над полоской опыта
+        Box(
+            modifier = Modifier
+                .padding(bottom = 6.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF2E2408).copy(alpha = 0.88f))
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = data.petName,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFFFC107)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(barBgColor)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Значок уровня
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF2E2408))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Ур. $level",
+                    color = Color(0xFFFFC107),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Шкала прогресса опыта
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(18.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(Color(0xFFE0D5B8)),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                // Зеленый индикатор
+                if (animatedProgress > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(animatedProgress)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFF2E7D32), // Тёмно-зелёный
+                                        Color(0xFF4CAF50), // Изумрудно-зелёный
+                                        Color(0xFF81C784)  // Светло-зелёный
+                                    )
+                                )
+                            )
+                    ) {
+                        // Блик сверху
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .background(Color.White.copy(alpha = 0.35f))
+                        )
+                    }
+                }
+
+                // Текст опыта по центру
+                Text(
+                    text = "$currentXp / $maxXp XP",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color(0xFF1B3012),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
     }
 }
 
@@ -348,7 +473,7 @@ fun LiquidCircleProgress(
     fillColor: Color = parameters.color,
     strokeColor: Color = parameters.strokeColor,
     strokeWidth: Dp = 6.dp,
-    animate: Boolean = true
+    animate: Boolean = false
 ) {
     val animated by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
