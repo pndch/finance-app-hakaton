@@ -2,27 +2,32 @@ package furrylovers.finance_app
 
 import android.app.Application
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -30,8 +35,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,7 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import furrylovers.finance_app.ui.theme.MainTheme
+import furrylovers.finance_app.ui.theme.*
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -97,7 +100,9 @@ fun ShopScreen(
     var notificationMessage by remember { mutableStateOf<String?>(null) }
     var isSuccessNotification by remember { mutableStateOf(true) }
 
-    val categories = ShopCategory.values()
+    var boughtItemForStats by remember { mutableStateOf<ShopItem?>(null) }
+
+    val categories = ShopCategory.entries.toTypedArray()
 
     LaunchedEffect(notificationMessage) {
         if (notificationMessage != null) {
@@ -106,45 +111,39 @@ fun ShopScreen(
         }
     }
 
+    LaunchedEffect(boughtItemForStats) {
+        if (boughtItemForStats != null) {
+            delay(3000L)
+            boughtItemForStats = null
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFFF8E1))
+                .background(AppBackgroundWarm)
                 .statusBarsPadding(),
             horizontalAlignment = Alignment.End
         ) {
             BalanceBar(balance = balance)
 
-            ScrollableTabRow(
-                selectedTabIndex = selectedTab,
-                edgePadding = 12.dp,
-                containerColor = Color(0xFFFFF3E0),
-                contentColor = Color(0xFFEF6C00),
-                divider = {}
-            ) {
-                categories.forEachIndexed { index, category ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            Text(
-                                text = category.title,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 15.sp
-                            )
-                        }
-                    )
-                }
-            }
+            CategorySelector(
+                categories = categories,
+                selectedIndex = selectedTab,
+                onCategorySelected = { selectedTab = it },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             val itemsForCategory = demoShopItems.filter { it.category == categories[selectedTab] }
 
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 12.dp),
                 contentPadding = PaddingValues(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(itemsForCategory, key = { it.id }) { item ->
@@ -160,6 +159,7 @@ fun ShopScreen(
                                 )
                                 notificationMessage = "Покупка совершена успешно!"
                                 isSuccessNotification = true
+                                boughtItemForStats = item
                             } else {
                                 notificationMessage = "Недостаточно монет для покупки!"
                                 isSuccessNotification = false
@@ -167,11 +167,10 @@ fun ShopScreen(
                         }
                     )
                 }
-
-                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
 
+        // Всплывающее уведомление сверху (о статусе покупки)
         AnimatedVisibility(
             visible = notificationMessage != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
@@ -185,7 +184,7 @@ fun ShopScreen(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isSuccessNotification) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                        containerColor = if (isSuccessNotification) NotificationSuccessBg else NotificationErrorBg
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -201,7 +200,7 @@ fun ShopScreen(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(if (isSuccessNotification) Color(0xFF4CAF50) else Color(0xFFE53935)),
+                                .background(if (isSuccessNotification) SuccessGreenBright else NotificationErrorBadge),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -214,12 +213,151 @@ fun ShopScreen(
 
                         Text(
                             text = msg,
-                            color = if (isSuccessNotification) Color(0xFF1B5E20) else Color(0xFFB71C1C),
+                            color = if (isSuccessNotification) NotificationSuccessText else NotificationErrorText,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+            }
+        }
+
+        // Всплывающее окно снизу (изменения характеристик)
+        AnimatedVisibility(
+            visible = boughtItemForStats != null,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp, start = 20.dp, end = 20.dp)
+        ) {
+            boughtItemForStats?.let { item ->
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = DarkChocolate),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Изменение характеристик питомца:",
+                            color = CoinGold,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (item.food > 0) {
+                                StatChip(
+                                    label = "+${item.food} Сытость",
+                                    bgColor = StatFoodOrange,
+                                    textColor = DarkChocolate
+                                )
+                            }
+                            if (item.care > 0) {
+                                StatChip(
+                                    label = "+${item.care} Уход",
+                                    bgColor = StatCareTeal,
+                                    textColor = DarkChocolate
+                                )
+                            }
+                            if (item.happiness > 0) {
+                                StatChip(
+                                    label = "+${item.happiness} Счастье",
+                                    bgColor = StatHappinessPink,
+                                    textColor = DarkChocolate
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatChip(
+    label: String,
+    bgColor: Color,
+    textColor: Color
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(
+            text = label,
+            color = textColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+    }
+}
+
+@Composable
+private fun CategorySelector(
+    categories: Array<ShopCategory>,
+    selectedIndex: Int,
+    onCategorySelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(AppCreamCapsule)
+            .padding(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            categories.forEachIndexed { index, category ->
+                val selected = index == selectedIndex
+                val chipBgColor by animateColorAsState(
+                    targetValue = if (selected) DarkChocolate else Color.Transparent,
+                    animationSpec = tween(300),
+                    label = "categoryBg"
+                )
+                val chipTextColor by animateColorAsState(
+                    targetValue = if (selected) CoinGold else TextMediumBrown,
+                    animationSpec = tween(300),
+                    label = "categoryText"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(chipBgColor)
+                        .clickable { onCategorySelected(index) }
+                        .padding(vertical = 10.dp, horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = category.title,
+                        color = chipTextColor,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 14.sp,
+                        maxLines = 1
+                    )
                 }
             }
         }
@@ -234,7 +372,7 @@ private fun BalanceBar(
     Row(
         modifier = modifier
             .padding(top = 16.dp, end = 16.dp)
-            .background(Color(0xFFFFF6E0).copy(alpha = 0.92f), RoundedCornerShape(20.dp))
+            .background(AppCreamPanel.copy(alpha = 0.92f), RoundedCornerShape(20.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -242,7 +380,7 @@ private fun BalanceBar(
         Box(
             modifier = Modifier
                 .size(35.dp)
-                .background(Color(0xFFFFC107), CircleShape),
+                .background(CoinGold, CircleShape),
             contentAlignment = Alignment.Center
         ) {
 
@@ -251,9 +389,8 @@ private fun BalanceBar(
                 val radius = (size.minDimension - strokePx) / 2f
                 val center = Offset(size.width / 2f, size.height / 2f)
 
-
                 drawCircle(
-                    color = Color(0xFFFFEB3B),
+                    color = CoinYellowLight,
                     radius = radius,
                     center = center,
                     style = Stroke(width = strokePx)
@@ -270,7 +407,7 @@ private fun BalanceBar(
         Spacer(modifier = Modifier.size(8.dp))
         Text(
             text = balance.toString(),
-            color = Color(0xFF2E2408),
+            color = DarkChocolate,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )
@@ -278,40 +415,32 @@ private fun BalanceBar(
 }
 
 @Composable
-private fun CoinBadge() {
-    Row(
+private fun CoinBadgeSmall() {
+    Box(
         modifier = Modifier
-            .statusBarsPadding()
+            .size(22.dp)
+            .background(CoinGold, CircleShape),
+        contentAlignment = Alignment.Center
     ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokePx = 8F
+            val radius = (size.minDimension - strokePx) / 2f
+            val center = Offset(size.width / 2f, size.height / 2f)
 
-        Box(
-            modifier = Modifier
-                .size(35.dp)
-                .background(Color(0xFFFFC107), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokePx = 15F
-                val radius = (size.minDimension - strokePx) / 2f
-                val center = Offset(size.width / 2f, size.height / 2f)
-
-
-                drawCircle(
-                    color = Color(0xFFFFEB3B),
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = strokePx)
-                )
-            }
-
-            Text(
-                text = "F",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
+            drawCircle(
+                color = CoinYellowLight,
+                radius = radius,
+                center = center,
+                style = Stroke(width = strokePx)
             )
         }
+
+        Text(
+            text = "F",
+            color = Color.White,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -321,68 +450,71 @@ private fun ShopItemCard(
     onBuyClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.82f),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Картинка товара в центре
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
                     .background(item.placeholderColor),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_favorite),
                     contentDescription = null,
-                    tint = Color(0xFF6D4C41),
-                    modifier = Modifier.size(36.dp)
+                    tint = TextMediumBrown,
+                    modifier = Modifier.size(42.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            // Описание (название)
+            Row() {
                 Text(
-                    text = item.name,
-                    fontSize = 17.sp,
+                    text = item.name + " ${item.price}",
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3E2723)
+                    color = TextDarkBrown,
+                    maxLines = 1
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CoinBadge()
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${item.price} монет",
-                        fontSize = 14.sp,
-                        color = Color(0xFF6D4C41)
-                    )
-                }
+
+                CoinBadgeSmall()
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
+            // Кнопка покупки
             Button(
                 onClick = onBuyClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp),
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF66BB6A),
+                    containerColor = BuyButtonGreen,
                     contentColor = Color.White
                 ),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
                     text = "Купить",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 13.sp
                 )
             }
         }
