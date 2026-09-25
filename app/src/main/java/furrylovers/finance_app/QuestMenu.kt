@@ -133,7 +133,7 @@ fun QuestMenuContent(
             .background(AppBackgroundWarm)
     ) {
         Image(
-            painter = painterResource(R.drawable.y),
+            painter = painterResource(R.drawable.photo_questmenu),
             contentDescription = null,
             modifier = Modifier
                 .height(250.dp)
