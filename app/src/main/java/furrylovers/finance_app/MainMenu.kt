@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -41,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,6 +73,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import furrylovers.finance_app.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class TitleScreenActivity : ComponentActivity() { // точка входа 2
@@ -107,20 +111,32 @@ enum class AppDestinations(
 @Composable
 fun MainMenu(viewModel: GameViewModel) {
     val data by viewModel.data.collectAsStateWithLifecycle()
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    val destinations = remember { AppDestinations.entries.toTypedArray() }
+    val initialPageIndex = remember { destinations.indexOf(AppDestinations.HOME).coerceAtLeast(0) }
+
+    val pagerState = rememberPagerState(
+        initialPage = initialPageIndex,
+        pageCount = { destinations.size }
+    )
+    val coroutineScope = rememberCoroutineScope()
+
+    val currentDestination = destinations[pagerState.currentPage]
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(RootBackgroundDark) // фон корня, склеит контент и панель
     ) {
-        // Контент занимает всё свободное место над панелью
-        Box(
+        HorizontalPager(
+            state = pagerState,
+            userScrollEnabled = false,
+            beyondViewportPageCount = 4,
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-        ) {
-            when (currentDestination) {
+                .fillMaxWidth(),
+            key = { destinations[it] }
+        ) { page ->
+            when (destinations[page]) {
                 AppDestinations.SHOP -> ShopScreen(viewModel)
                 AppDestinations.QUESTS -> QuestMenu(viewModel)
                 AppDestinations.HOME -> MainMenuContent(data)
@@ -132,7 +148,14 @@ fun MainMenu(viewModel: GameViewModel) {
         // Панель снизу — своя, не накрывает контент
         BottomPanel(
             currentDestination = currentDestination,
-            onDestinationChange = { currentDestination = it },
+            onDestinationChange = { targetDest ->
+                val targetIndex = destinations.indexOf(targetDest)
+                if (targetIndex >= 0) {
+                    coroutineScope.launch {
+                        pagerState.scrollToPage(targetIndex)
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
     }

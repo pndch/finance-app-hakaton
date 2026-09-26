@@ -33,12 +33,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 @Composable
-fun BudgetMenu( viewModel: GameViewModel ) {
+fun BudgetMenu(viewModel: GameViewModel) {
     val data by viewModel.data.collectAsStateWithLifecycle()
-    //val data = remember { try { DoJson(context).loadData() } catch (e: Exception) { Data() } }
-    MainTheme() {
-        BudgetMenuContent(data)
-    }
+    BudgetMenuContent(data)
 }
 
 @Composable

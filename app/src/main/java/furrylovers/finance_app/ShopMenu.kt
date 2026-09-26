@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -95,14 +96,14 @@ fun ShopScreen(
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val data by viewModel.data.collectAsStateWithLifecycle()
-    var balance by rememberSaveable { mutableIntStateOf(data.money) }
+    val balance = data.money
 
     var notificationMessage by remember { mutableStateOf<String?>(null) }
     var isSuccessNotification by remember { mutableStateOf(true) }
 
     var boughtItemForStats by remember { mutableStateOf<ShopItem?>(null) }
 
-    val categories = ShopCategory.entries.toTypedArray()
+    val categories = remember { ShopCategory.entries.toTypedArray() }
 
     LaunchedEffect(notificationMessage) {
         if (notificationMessage != null) {
@@ -135,7 +136,9 @@ fun ShopScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            val itemsForCategory = demoShopItems.filter { it.category == categories[selectedTab] }
+            val itemsForCategory = remember(selectedTab) {
+                demoShopItems.filter { it.category == categories[selectedTab] }
+            }
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -151,7 +154,6 @@ fun ShopScreen(
                         item = item,
                         onBuyClick = {
                             if (balance >= item.price) {
-                                balance -= item.price
                                 viewModel.buyItem(
                                     itemId = item.id,
                                     price = item.price,
@@ -186,7 +188,7 @@ fun ShopScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = if (isSuccessNotification) NotificationSuccessBg else NotificationErrorBg
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -237,7 +239,7 @@ fun ShopScreen(
                 Card(
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = DarkChocolate),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -376,14 +378,12 @@ private fun BalanceBar(
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Box(
             modifier = Modifier
                 .size(35.dp)
                 .background(CoinGold, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val strokePx = 15F
                 val radius = (size.minDimension - strokePx) / 2f
@@ -418,7 +418,7 @@ private fun BalanceBar(
 private fun CoinBadgeSmall() {
     Box(
         modifier = Modifier
-            .size(22.dp)
+            .size(20.dp)
             .background(CoinGold, CircleShape),
         contentAlignment = Alignment.Center
     ) {
@@ -455,7 +455,7 @@ private fun ShopItemCard(
             .aspectRatio(0.82f),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -464,7 +464,6 @@ private fun ShopItemCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Картинка товара в центре
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -483,22 +482,20 @@ private fun ShopItemCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Описание (название)
-            Row() {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = item.name + " ${item.price}",
+                    text = "${item.name} ${item.price}",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDarkBrown,
                     maxLines = 1
                 )
-
+                Spacer(modifier = Modifier.width(4.dp))
                 CoinBadgeSmall()
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Кнопка покупки
             Button(
                 onClick = onBuyClick,
                 modifier = Modifier

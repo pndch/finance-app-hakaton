@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,14 +54,12 @@ import furrylovers.finance_app.ui.theme.*
 @Composable
 fun QuestMenu(viewModel: GameViewModel) {
     val data by viewModel.data.collectAsStateWithLifecycle()
-    MainTheme {
-        QuestMenuContent(
-            data = data,
-            onQuestClick = { questId ->
-                viewModel.changeQuestCompletion(questId)
-            }
-        )
-    }
+    QuestMenuContent(
+        data = data,
+        onQuestClick = { questId ->
+            viewModel.changeQuestCompletion(questId)
+        }
+    )
 }
 
 @Composable
@@ -125,7 +123,7 @@ fun QuestMenuContent(
     onQuestClick: (Int) -> Unit = {}
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    val questCategories = QuestCategory.entries.toTypedArray()
+    val questCategories = remember { QuestCategory.entries.toTypedArray() }
 
     Column(
         modifier = Modifier
@@ -148,7 +146,9 @@ fun QuestMenuContent(
             modifier = Modifier.fillMaxWidth()
         )
 
-        val itemsForCategory = data.quests.filter { it.questStatus == questCategories[selectedTab] }
+        val itemsForCategory = remember(data.quests, selectedTab) {
+            data.quests.filter { it.questStatus == questCategories[selectedTab] }
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -186,7 +186,7 @@ private fun QuestItemCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -194,23 +194,6 @@ private fun QuestItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-//            Box(
-//                modifier = Modifier
-//                    .size(72.dp)
-//                    .clip(RoundedCornerShape(16.dp))
-//                    .background(MaterialTheme.colorScheme.surface),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                Icon(
-//                    painter = painterResource(R.drawable.ic_favorite),
-//                    contentDescription = null,
-//                    tint = TextMediumBrown,
-//                    modifier = Modifi er.size(36.dp)
-//                )
-//            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.questName,
@@ -221,7 +204,7 @@ private fun QuestItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CoinBadge()
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = item.questDescription,
                         fontSize = 14.sp,
@@ -259,7 +242,7 @@ private fun CompletedQuestItemCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -269,16 +252,16 @@ private fun CompletedQuestItemCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AppCreamCapsule),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_favorite),
                     contentDescription = null,
                     tint = TextMediumBrown,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
@@ -294,7 +277,7 @@ private fun CompletedQuestItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CoinBadge()
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = item.questDescription,
                         fontSize = 14.sp,
@@ -302,43 +285,37 @@ private fun CompletedQuestItemCard(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
         }
     }
 }
 
 @Composable
 private fun CoinBadge() {
-    Row(
-        modifier = Modifier.statusBarsPadding()
+    Box(
+        modifier = Modifier
+            .size(35.dp)
+            .background(CoinGold, CircleShape),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(35.dp)
-                .background(CoinGold, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokePx = 15F
-                val radius = (size.minDimension - strokePx) / 2f
-                val center = Offset(size.width / 2f, size.height / 2f)
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokePx = 15F
+            val radius = (size.minDimension - strokePx) / 2f
+            val center = Offset(size.width / 2f, size.height / 2f)
 
-                drawCircle(
-                    color = CoinYellowLight,
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = strokePx)
-                )
-            }
-
-            Text(
-                text = "F",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
+            drawCircle(
+                color = CoinYellowLight,
+                radius = radius,
+                center = center,
+                style = Stroke(width = strokePx)
             )
         }
+
+        Text(
+            text = "F",
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

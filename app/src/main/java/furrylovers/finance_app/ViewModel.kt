@@ -2,9 +2,12 @@ package furrylovers.finance_app
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -31,7 +34,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun update(transform: (Data) -> Data) {
         val newData = transform(_data.value)
         _data.value = newData
-        saver.saveData(newData)
+        viewModelScope.launch(Dispatchers.IO) {
+            saver.saveData(newData)
+        }
     }
 
     // Пополнение / списание средств
@@ -49,7 +54,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
-    // Функционал квестов (ранее был в JsonQuest)
+    // Функционал квестов
     fun initQuests() = update { it.copy(quests = questsItems.toMutableList()) }
 
     fun addQuest(quest: Quests) = update { d ->
