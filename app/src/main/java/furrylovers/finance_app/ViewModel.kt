@@ -39,18 +39,90 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // Завершить день: падение статов на 25, начисление +100 монет, сохранение плана бюджета и сброс фактических расходов
+    fun finishDay(food: Int = 0, care: Int = 0, mood: Int = 0) = update { d ->
+        val updatedNeeds = d.petNeeds.toMutableList().also {
+            if (it.size >= 3) {
+                it[0] = (it[0] - 25).coerceAtLeast(0)
+                it[1] = (it[1] - 25).coerceAtLeast(0)
+                it[2] = (it[2] - 25).coerceAtLeast(0)
+            }
+        }
+        d.copy(
+            money = d.money + 100,
+            budget = mutableListOf(food, care, mood),
+            expenses = mutableListOf(0, 0, 0),
+            lastFinishDayTime = System.currentTimeMillis(),
+            petNeeds = updatedNeeds
+        )
+    }
+
+    // Пополнить копилку
+    fun depositToBank(amount: Int, goalTarget: Int) = update { d ->
+        val actualAmount = amount.coerceAtMost(d.money)
+        if (actualAmount <= 0) return@update d
+
+        val newBank = d.bank + actualAmount
+        val newMoney = d.money - actualAmount
+
+        if (newBank >= goalTarget) {
+            // При достижении цели даем много опыта и повышаем уровень!
+            val updatedQuests = d.quests.map { q ->
+                if (q.questStatus == QuestCategory.UNCOMPLETED) {
+                    q.copy(questStatus = QuestCategory.COMPLETED)
+                } else q
+            }.toMutableList()
+
+            d.copy(
+                money = newMoney,
+                bank = (newBank - goalTarget).coerceAtLeast(0),
+                petStage = d.petStage + 1,
+                questCompleted = d.questCompleted + 3,
+                quests = updatedQuests
+            )
+        } else {
+            d.copy(
+                money = newMoney,
+                bank = newBank
+            )
+        }
+    }
+
     // Пополнение / списание средств
     fun changeMoney(delta: Int) = update { it.copy(money = it.money + delta) }
 
     fun buyItem(itemId: Int, price: Int, stats: MutableList<Int>) = update { d ->
+        val dominantStatIndex = when {
+            stats[0] >= stats[1] && stats[0] >= stats[2] -> 0 // Еда
+            stats[1] >= stats[0] && stats[1] >= stats[2] -> 1 // Уход
+            else -> 2 // Настроение
+        }
+
+        val updatedExpenses = d.expenses.toMutableList().also {
+            while (it.size < 3) it.add(0)
+            it[dominantStatIndex] += price
+        }
+
+        val updatedInventory = d.inventory.toMutableList().also {
+            if (itemId - 1 in it.indices) {
+                it[itemId - 1] += 1
+            }
+        }
+
+        val updatedNeeds = d.petNeeds.toMutableList().also {
+            if (it.size >= 3) {
+                it[0] = (it[0] + stats[0]).coerceAtMost(100)
+                it[1] = (it[1] + stats[1]).coerceAtMost(100)
+                it[2] = (it[2] + stats[2]).coerceAtMost(100)
+            }
+        }
+
         d.copy(
             money = d.money - price,
-            inventory = d.inventory.toMutableList().also { it[itemId - 1] += 1 },
-            petNeeds = d.petNeeds.toMutableList().also {
-                it[0] += stats[0]
-                it[1] += stats[1]
-                it[2] += stats[2]
-            },
+            monetSpened = d.monetSpened + price,
+            expenses = updatedExpenses,
+            inventory = updatedInventory,
+            petNeeds = updatedNeeds
         )
     }
 

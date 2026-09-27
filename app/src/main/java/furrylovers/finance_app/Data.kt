@@ -43,7 +43,7 @@ data class Data(
     var petStage: Int = 1,
     var petNeeds: MutableList<Int> = mutableListOf(50, 50, 50), // Food, Care, Mood
 
-    var money: Int = 5000,
+    var money: Int = 500,
     var bank: Int = 0,
     var inventory: MutableList<Int> = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 
@@ -52,7 +52,11 @@ data class Data(
     var targetPassed: Int = 0,
     var monetSpened: Int = 0,
 
-    var budget: MutableList<Int> = mutableListOf(0, 0, 0), // Mandatory / Non-mandatory / Care or smth
+    var lastFinishDayTime: Long = 0L,
+
+    var budget: MutableList<Int> = mutableListOf(0, 0, 0), // Еда, Уход, Настроение
+    var expenses: MutableList<Int> = mutableListOf(0, 0, 0), // Еда, Уход, Настроение
+
     var goals: MutableList<Goal> = emptyList<Goal>().toMutableList(),
     var quests: MutableList<Quests> = questsItems.toMutableList()
 ) {

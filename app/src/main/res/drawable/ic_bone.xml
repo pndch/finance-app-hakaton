@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Центральный стержень -->
+    <path
+        android:fillColor="#E8C888"
+        android:pathData="M7,9 L17,9 L17,15 L7,15 Z" />
+
+    <!-- Левая пара головок -->
+    <path
+        android:fillColor="#E8C888"
+        android:pathData="M7,9 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+    <path
+        android:fillColor="#E8C888"
+        android:pathData="M7,15 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+
+    <!-- Правая пара головок -->
+    <path
+        android:fillColor="#E8C888"
+        android:pathData="M17,9 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+    <path
+        android:fillColor="#E8C888"
+        android:pathData="M17,15 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+
+    <!-- Блик в верхней левой головке -->
+    <path
+        android:fillColor="#FFF3D6"
+        android:pathData="M6,8 m-1.2,0 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0" />
+
+    <!-- Блик в нижней правой головке -->
+    <path
+        android:fillColor="#FFF3D6"
+        android:pathData="M18,16 m-1.2,0 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0" />
+</vector>

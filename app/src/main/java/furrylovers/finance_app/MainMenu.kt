@@ -21,6 +21,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -32,19 +33,29 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,11 +73,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -74,6 +87,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import furrylovers.finance_app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.round
 import kotlin.random.Random
 
 class TitleScreenActivity : ComponentActivity() { // точка входа 2
@@ -104,7 +118,6 @@ enum class AppDestinations(
     SHOP(R.drawable.ic_favorite),
     QUESTS(R.drawable.ic_favorite),
     HOME(R.drawable.ic_home),
-    BUDGET(R.drawable.ic_favorite),
     PROFILE(R.drawable.ic_account_box),
 }
 
@@ -139,8 +152,12 @@ fun MainMenu(viewModel: GameViewModel) {
             when (destinations[page]) {
                 AppDestinations.SHOP -> ShopScreen(viewModel)
                 AppDestinations.QUESTS -> QuestMenu(viewModel)
-                AppDestinations.HOME -> MainMenuContent(data)
-                AppDestinations.BUDGET -> BudgetMenu(viewModel)
+                AppDestinations.HOME -> MainMenuContent(
+                    data = data,
+                    onFinishDayClick = { food, care, mood ->
+                        viewModel.finishDay(food, care, mood)
+                    }
+                )
                 AppDestinations.PROFILE -> ProfileMenu(viewModel)
             }
         }
@@ -254,8 +271,7 @@ private fun BottomPanelButton(
                 AppDestinations.SHOP -> "Магазин"
                 AppDestinations.QUESTS -> "Квесты"
                 AppDestinations.HOME -> "Главная"
-                AppDestinations.BUDGET -> "Бюджет"
-                AppDestinations.PROFILE -> "Родителям"
+                AppDestinations.PROFILE -> "Профиль"
             },
             fontSize = 11.sp,
             color = contentColor,
@@ -266,7 +282,37 @@ private fun BottomPanelButton(
 }
 
 @Composable
-private fun MainMenuContent(data: Data) {
+private fun MainMenuContent(
+    data: Data,
+    onFinishDayClick: (food: Int, care: Int, mood: Int) -> Unit = { _, _, _ -> }
+) {
+    var showFinishDayDialog by remember { mutableStateOf(data.lastFinishDayTime == 0L) }
+
+    val intervalMs = 5000L
+    //val intervalMs = 12 * 60 * 60 * 1000L // 12 часов в мс
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1000L)
+        }
+    }
+
+    val isFinishDayAvailable = remember(data.lastFinishDayTime, now) {
+        data.lastFinishDayTime == 0L || (now - data.lastFinishDayTime >= intervalMs)
+    }
+
+    if (showFinishDayDialog) {
+        FinishDayDialog(
+            data = data,
+            onDismiss = { showFinishDayDialog = false },
+            onConfirm = { food, care, mood ->
+                onFinishDayClick(food, care, mood)
+                showFinishDayDialog = false
+            }
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -286,14 +332,12 @@ private fun MainMenuContent(data: Data) {
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box(
                 modifier = Modifier
                     .size(35.dp)
                     .background(CoinGold, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val strokePx = 15F
                     val radius = (size.minDimension - strokePx) / 2f
@@ -350,12 +394,403 @@ private fun MainMenuContent(data: Data) {
             }
         }
 
+        // Круглая кнопка "Завершить день" под персонажем
+        if (isFinishDayAvailable) {
+            FinishDayButton(
+                onClick = { showFinishDayDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 85.dp)
+            )
+        }
+
         ExperienceBar(
             data = data,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         )
+    }
+}
+
+@Composable
+private fun BudgetComparisonCard(
+    budget: List<Int>,
+    expenses: List<Int>
+) {
+    val plannedFood = budget.getOrElse(0) { 0 }
+    val actualFood = expenses.getOrElse(0) { 0 }
+
+    val plannedCare = budget.getOrElse(1) { 0 }
+    val actualCare = expenses.getOrElse(1) { 0 }
+
+    val plannedMood = budget.getOrElse(2) { 0 }
+    val actualMood = expenses.getOrElse(2) { 0 }
+
+    val totalPlan = plannedFood + plannedCare + plannedMood
+    val hasPlan = totalPlan > 0
+
+    if (!hasPlan) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = AppCreamCapsule),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "📊 Первый день: План ещё не составлялся",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkChocolate
+                )
+            }
+        }
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            CategoryComparisonRow(
+                label = "Еда",
+                planned = plannedFood,
+                actual = actualFood,
+                accentColor = StatFoodOrange
+            )
+
+            CategoryComparisonRow(
+                label = "Уход",
+                planned = plannedCare,
+                actual = actualCare,
+                accentColor = StatCareTeal
+            )
+
+            CategoryComparisonRow(
+                label = "Настроение",
+                planned = plannedMood,
+                actual = actualMood,
+                accentColor = StatHappinessPink
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryComparisonRow(
+    label: String,
+    planned: Int,
+    actual: Int,
+    accentColor: Color
+) {
+    val diff = actual - planned
+    val isOver = diff > 0
+
+    val statusBg = if (isOver) NotificationErrorBg else NotificationSuccessBg
+    val statusText = if (isOver) NotificationErrorText else NotificationSuccessText
+    val statusSymbol = if (isOver) "⚠️ +$diff F" else if (diff < 0) "✅ -${-diff} F" else "✅ 0 F"
+
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = AppCreamCapsule),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(accentColor)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = label,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkChocolate,
+                    maxLines = 1
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "$actual/$planned F",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkChocolate,
+                    maxLines = 1
+                )
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(statusBg)
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = statusSymbol,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = statusText,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinishDayDialog(
+    data: Data,
+    onDismiss: () -> Unit,
+    onConfirm: (food: Int, care: Int, mood: Int) -> Unit
+) {
+    val currentMoney = data.money
+    val maxAvailableCoins = currentMoney + 100
+    var foodVal by remember { mutableFloatStateOf(0f) }
+    var careVal by remember { mutableFloatStateOf(0f) }
+    var moodVal by remember { mutableFloatStateOf(0f) }
+
+    val totalAllocated = (foodVal + careVal + moodVal).toInt()
+    val isLimitExceeded = totalAllocated > maxAvailableCoins
+    val scrollState = rememberScrollState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = AppCreamPanel),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Завершение дня ✨",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkChocolate
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Сравнение факта и плана по каждой категории
+                BudgetComparisonCard(
+                    budget = data.budget,
+                    expenses = data.expenses
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Доступно: $maxAvailableCoins монет (Баланс $currentMoney + 100)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextMediumBrown
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isLimitExceeded) NotificationErrorBg else NotificationSuccessBg)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "Распределено: $totalAllocated / $maxAvailableCoins монет",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isLimitExceeded) NotificationErrorText else NotificationSuccessText
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Слайдер 1: Еда
+                SliderRow(
+                    label = "Еда",
+                    value = foodVal,
+                    onValueChange = { foodVal = (round(it / 25f) * 25f) },
+                    activeColor = StatFoodOrange
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Слайдер 2: Настроение
+                SliderRow(
+                    label = "Настроение",
+                    value = moodVal,
+                    onValueChange = { moodVal = (round(it / 25f) * 25f) },
+                    activeColor = StatHappinessPink
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Слайдер 3: Уход
+                SliderRow(
+                    label = "Уход",
+                    value = careVal,
+                    onValueChange = { careVal = (round(it / 25f) * 25f) },
+                    activeColor = StatCareTeal
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Кнопки действия
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppCreamCapsule,
+                            contentColor = TextMediumBrown
+                        )
+                    ) {
+                        Text("Отмена", fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            onConfirm(foodVal.toInt(), careVal.toInt(), moodVal.toInt())
+                        },
+                        enabled = !isLimitExceeded,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BuyButtonGreen,
+                            contentColor = Color.White,
+                            disabledContainerColor = Color.Gray.copy(alpha = 0.4f),
+                            disabledContentColor = Color.White.copy(alpha = 0.7f)
+                        )
+                    ) {
+                        Text("Подтвердить", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SliderRow(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    activeColor: Color
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkChocolate
+            )
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(activeColor)
+                    .padding(horizontal = 10.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "${value.toInt()} монет",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DarkChocolate
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = 0f..200f,
+            steps = 7,
+            colors = SliderDefaults.colors(
+                thumbColor = activeColor,
+                activeTrackColor = activeColor,
+                inactiveTrackColor = activeColor.copy(alpha = 0.25f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun FinishDayButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(80.dp),
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = DarkChocolate,
+            contentColor = CoinGold
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "✨",
+                fontSize = 18.sp
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Завершить\nдень",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = CoinGold,
+                textAlign = TextAlign.Center,
+                lineHeight = 11.sp
+            )
+        }
     }
 }
 

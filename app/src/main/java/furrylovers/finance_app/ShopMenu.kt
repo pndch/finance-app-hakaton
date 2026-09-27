@@ -70,7 +70,8 @@ data class ShopItem(
     val placeholderColor: Color = Color(0xFFFFE0B2),
     val food: Int,
     val care: Int,
-    val happiness: Int
+    val happiness: Int,
+    val res: Int
 )
 
 enum class ShopCategory(val title: String) {
@@ -79,14 +80,17 @@ enum class ShopCategory(val title: String) {
 }
 
 private val demoShopItems = listOf(
-    ShopItem(1, "Яблоко", 50, ShopCategory.MANDATORY, Color(0xFFFFCDD2), food = 15, care = 0, happiness = 5),
-    ShopItem(2, "Молоко", 80, ShopCategory.MANDATORY, Color(0xFFB3E5FC), food = 20, care = 0, happiness = 5),
-    ShopItem(3, "Хлеб", 60, ShopCategory.MANDATORY, Color(0xFFFFE0B2), food = 25, care = 0, happiness = 3),
-    ShopItem(4, "Рыба", 150, ShopCategory.MANDATORY, Color(0xFFB2DFDB), food = 35, care = 0, happiness = 8),
-    ShopItem(5, "Зубная щётка", 70, ShopCategory.MANDATORY, Color(0xFFB3E5FC), food = 0, care = 20, happiness = 5),
-    ShopItem(6, "Зубная паста", 90, ShopCategory.MANDATORY, Color(0xFFFFF9C4), food = 0, care = 25, happiness = 5),
-    ShopItem(7, "Мыло", 40, ShopCategory.MANDATORY, Color(0xFFF8BBD0), food = 0, care = 15, happiness = 3),
-    ShopItem(8, "Шампунь", 110, ShopCategory.MANDATORY, Color(0xFFD1C4E9), food = 0, care = 30, happiness = 8)
+    ShopItem(1, "Яблоко", 50, ShopCategory.MANDATORY, Color(0xFFFFCDD2), food = 15, care = 0, happiness = 5, res = R.drawable.ic_apple),
+    ShopItem(2, "Молоко", 80, ShopCategory.MANDATORY, Color(0xFFB3E5FC), food = 20, care = 0, happiness = 5, res = R.drawable.ic_milk),
+    ShopItem(3, "Хлеб", 60, ShopCategory.MANDATORY, Color(0xFFFFE0B2), food = 25, care = 0, happiness = 3, res = R.drawable.ic_bread),
+    ShopItem(4, "Рыба", 150, ShopCategory.MANDATORY, Color(0xFFB2DFDB), food = 35, care = 0, happiness = 8, res = R.drawable.ic_fish),
+    ShopItem(6, "Зубная паста", 90, ShopCategory.MANDATORY, Color(0xFFFFF9C4), food = 0, care = 25, happiness = 5, res = R.drawable.ic_toothpaste),
+    ShopItem(7, "Мыло", 40, ShopCategory.MANDATORY, Color(0xFFF8BBD0), food = 0, care = 15, happiness = 3, res = R.drawable.ic_soap),
+    ShopItem(8, "Шампунь", 110, ShopCategory.MANDATORY, Color(0xFFD1C4E9), food = 0, care = 30, happiness = 8, res = R.drawable.ic_shampoo),
+    ShopItem(9,  "Мячик",              100, ShopCategory.OPTIONAL, Color(0xFFBBDEFB), food = 0, care = 0, happiness = 15, res = R.drawable.ic_ball),
+    ShopItem(10, "Мышка",   150, ShopCategory.OPTIONAL, Color(0xFFF8BBD0), food = 0, care = 0, happiness = 18, res = R.drawable.ic_toy_mouse),
+    ShopItem(11, "Косточка",            80, ShopCategory.OPTIONAL, Color(0xFFFFF9C4), food = 0, care = 0, happiness = 12, res = R.drawable.ic_bone),
+    ShopItem(12, "Погремушка",          60, ShopCategory.OPTIONAL, Color(0xFFFFE0B2), food = 0, care = 0, happiness = 10, res = R.drawable.ic_rattle)
 )
 
 @Composable
@@ -473,9 +477,9 @@ private fun ShopItemCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_favorite),
+                    painter = painterResource(item.res),
                     contentDescription = null,
-                    tint = TextMediumBrown,
+                    tint = Color.Unspecified,
                     modifier = Modifier.size(42.dp)
                 )
             }
