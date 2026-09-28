@@ -1,4 +1,4 @@
-package furrylovers.finance_app
+package furrylovers.finance_app.menues
 
 import android.app.Application
 import androidx.compose.animation.AnimatedVisibility
@@ -58,6 +58,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import furrylovers.finance_app.viewmodel.GameViewModel
+import furrylovers.finance_app.R
 import furrylovers.finance_app.ui.theme.*
 import kotlinx.coroutines.delay
 import java.io.File

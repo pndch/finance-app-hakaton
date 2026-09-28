@@ -1,8 +1,14 @@
-package furrylovers.finance_app
+package furrylovers.finance_app.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import furrylovers.finance_app.data_save.Data
+import furrylovers.finance_app.data_save.JsonData
+import furrylovers.finance_app.quests.QuestCategory
+import furrylovers.finance_app.quests.QuestManager
+import furrylovers.finance_app.quests.QuestType
+import furrylovers.finance_app.quests.questsItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +45,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Пометить завершенные квесты как просмотренные (убирает красный кружочек)
     fun markCompletedQuestsAsViewed() = update { d ->
         if (d.hasUnreadCompletedQuests) {
             d.copy(hasUnreadCompletedQuests = false)
@@ -48,7 +53,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Решить экономическую задачку
     fun solvePuzzleQuest(questId: Int, selectedAnswer: String): Boolean {
         val currentQuest = _data.value.quests.find { it.id == questId } ?: return false
         if (currentQuest.correctAnswer == selectedAnswer) {
@@ -73,11 +77,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         return false
     }
 
-    // Завершить день: падение статов на 25, начисление +100 монет, сохранение плана бюджета, сброс расходов
     fun finishDay(food: Int = 0, care: Int = 0, mood: Int = 0) = update { d ->
         var completedCount = 0
 
-        // Прогресс квеста "Заверши 2 дня"
         val updatedQuests = QuestManager.processEvent(d.quests, QuestType.FINISH_DAYS, 1) { _, _ ->
             completedCount++
         }
@@ -102,14 +104,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
-    // Пополнить копилку
     fun depositToBank(amount: Int, goalTarget: Int) = update { d ->
         val actualAmount = amount.coerceAtMost(d.money)
         if (actualAmount <= 0) return@update d
 
         var completedCount = 0
 
-        // Прогресс квеста "Отложи монет в копилку"
         val currentQuests = QuestManager.processEvent(d.quests, QuestType.DEPOSIT_TO_BANK, actualAmount) { _, _ ->
             completedCount++
         }
@@ -118,7 +118,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val newMoney = d.money - actualAmount
 
         if (newBank >= goalTarget) {
-            // При достижении цели даем много опыта и повышаем уровень!
             val questsWithBonus = currentQuests.map { q ->
                 if (q.questStatus == QuestCategory.UNCOMPLETED) {
                     q.copy(
@@ -147,24 +146,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Пополнение / списание средств
-    fun changeMoney(delta: Int) = update { it.copy(money = it.money + delta) }
-
     fun buyItem(itemId: Int, price: Int, stats: MutableList<Int>) = update { d ->
         val dominantStatIndex = when {
-            stats[0] >= stats[1] && stats[0] >= stats[2] -> 0 // Еда
-            stats[1] >= stats[0] && stats[1] >= stats[2] -> 1 // Уход
-            else -> 2 // Настроение
+            stats[0] >= stats[1] && stats[0] >= stats[2] -> 0
+            stats[1] >= stats[0] && stats[1] >= stats[2] -> 1
+            else -> 2
         }
 
         var completedCount = 0
 
-        // 1. Прогресс общего расхода средств
         var updatedQuests = QuestManager.processEvent(d.quests, QuestType.SPEND_TOTAL_MONEY, price) { _, _ ->
             completedCount++
         }
 
-        // 2. Прогресс расхода по конкретным категориям (Еда / Уход)
         if (dominantStatIndex == 0 && stats[0] > 0) {
             updatedQuests = QuestManager.processEvent(updatedQuests, QuestType.SPEND_ON_FOOD, price) { _, _ ->
                 completedCount++
@@ -206,7 +200,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
-    // Забрать награду за квест при ручном нажатии
     fun claimQuestReward(questId: Int) = update { d ->
         val quest = d.quests.find { it.id == questId }
         if (quest != null && quest.questProgress >= quest.targetValue && quest.questStatus == QuestCategory.UNCOMPLETED) {
@@ -224,43 +217,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Функционал квестов
-    fun initQuests() = update { it.copy(quests = questsItems.toMutableList()) }
-
-    fun addQuest(quest: Quests) = update { d ->
-        d.copy(quests = (d.quests + quest).toMutableList())
+    fun completeLevel3Event(correct: Boolean) = update { d ->
+        d.copy(
+            level3EventShown = true,
+            level3EventCompleted = correct,
+            questCompleted = if (correct) d.questCompleted + 3 else d.questCompleted
+        )
     }
 
-    fun changeQuestCompletion(id: Int) = update { d ->
-        val updatedQuests = d.quests.map { q ->
-            if (q.id == id) {
-                val newStatus = if (q.questStatus == QuestCategory.UNCOMPLETED) {
-                    QuestCategory.COMPLETED
-                } else {
-                    QuestCategory.UNCOMPLETED
-                }
-                q.copy(questStatus = newStatus)
-            } else {
-                q
-            }
-        }.toMutableList()
-        d.copy(quests = updatedQuests)
-    }
-
-    fun resetData() = update {
-        val newData = Data(quests = questsItems.toMutableList())
-        newData
-    }
-
-    fun finishFirstStart() = update { d ->
-        d.copy(firstStart = false)
-    }
-
-    fun setPetName(name: String) = update { d ->
-        d.copy(petName = name)
-    }
-
-    fun setPetType(type: Int) = update { d ->
-        d.copy(petType = type)
+    fun completeLevel5Event(correct: Boolean) = update { d ->
+        d.copy(
+            level5EventShown = true,
+            level5EventCompleted = correct,
+            questCompleted = if (correct) d.questCompleted + 5 else d.questCompleted
+        )
     }
 }

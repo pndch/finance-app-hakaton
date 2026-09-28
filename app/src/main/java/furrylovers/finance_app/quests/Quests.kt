@@ -1,4 +1,4 @@
-package furrylovers.finance_app
+package furrylovers.finance_app.quests
 
 import kotlinx.serialization.Serializable
 

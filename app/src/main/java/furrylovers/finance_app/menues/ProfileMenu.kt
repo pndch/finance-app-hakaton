@@ -1,4 +1,4 @@
-package furrylovers.finance_app
+package furrylovers.finance_app.menues
 
 import android.app.Activity
 import android.content.Intent
@@ -8,7 +8,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,6 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import furrylovers.finance_app.data_save.Data
+import furrylovers.finance_app.viewmodel.GameViewModel
+import furrylovers.finance_app.quests.QuestCategory
+import furrylovers.finance_app.data_save.characters
 import furrylovers.finance_app.ui.theme.*
 import kotlin.math.round
 
@@ -98,10 +100,12 @@ fun ProfileMenuContent(
 
     var showDepositDialog by remember { mutableStateOf(false) }
 
-    // Расчёт уровня и опыта на основе questAward выполненных квестов
+    // Расчёт уровня и опыта на основе questAward выполненных квестов и ивентов
     val totalEarnedXp = data.quests
         .filter { it.questStatus == QuestCategory.COMPLETED }
-        .sumOf { it.questAward }
+        .sumOf { it.questAward } +
+        (if (data.level3EventCompleted) 300 else 0) +
+        (if (data.level5EventCompleted) 500 else 0)
 
     val levelXpThreshold = 300
     val level = data.petStage + (totalEarnedXp / levelXpThreshold)

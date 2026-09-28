@@ -1,7 +1,14 @@
-package furrylovers.finance_app
+package furrylovers.finance_app.data_save
 
 import kotlinx.serialization.Serializable
 import android.content.Context
+import furrylovers.finance_app.quests.Quests
+import furrylovers.finance_app.R
+import furrylovers.finance_app.quests.questsItems
+
+object DebugSettings {
+    var finishDayIntervalMs: Long = 12 * 60 * 60 * 1000L // 12 часов по умолчанию
+}
 
 val characters: List<Int> = listOf(
     R.drawable.char0,
@@ -9,23 +16,9 @@ val characters: List<Int> = listOf(
     R.drawable.char2,
     R.drawable.char3,
     R.drawable.char4,
-    R.drawable.char5,
-    R.drawable.char6,
-    R.drawable.char7,
-    R.drawable.char8,
+    R.drawable.char5
 )
 
-val characterThumbnails: List<Int> = listOf(
-    R.drawable.char0_thumbnail,
-    R.drawable.char1_thumbnail,
-    R.drawable.char2_thumbnail,
-    R.drawable.char3_thumbnail,
-    R.drawable.char4_thumbnail,
-    R.drawable.char5_thumbnail,
-    R.drawable.char6_thumbnail,
-    R.drawable.char7_thumbnail,
-    R.drawable.char8_thumbnail,
-)
 
 @Serializable
 data class Goal(
@@ -57,6 +50,11 @@ data class Data(
     var budget: MutableList<Int> = mutableListOf(0, 0, 0), // Еда, Уход, Настроение
     var expenses: MutableList<Int> = mutableListOf(0, 0, 0), // Еда, Уход, Настроение
     var hasUnreadCompletedQuests: Boolean = false, // Непросмотренный красный кружочек на иконке квестов
+
+    var level3EventShown: Boolean = false,
+    var level5EventShown: Boolean = false,
+    var level3EventCompleted: Boolean = false,
+    var level5EventCompleted: Boolean = false,
 
     var goals: MutableList<Goal> = emptyList<Goal>().toMutableList(),
     var quests: MutableList<Quests> = questsItems.toMutableList()

@@ -1,5 +1,6 @@
-package furrylovers.finance_app
+package furrylovers.finance_app.menues
 
+import android.R
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -84,11 +85,15 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import furrylovers.finance_app.data_save.Data
+import furrylovers.finance_app.data_save.DebugSettings
+import furrylovers.finance_app.viewmodel.GameViewModel
+import furrylovers.finance_app.quests.QuestCategory
+import furrylovers.finance_app.data_save.characters
 import furrylovers.finance_app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.round
-import kotlin.random.Random
 
 class TitleScreenActivity : ComponentActivity() { // точка входа 2
     private val viewModel: GameViewModel by viewModels()
@@ -96,7 +101,7 @@ class TitleScreenActivity : ComponentActivity() { // точка входа 2
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        window.setBackgroundDrawableResource(android.R.color.transparent)
+        window.setBackgroundDrawableResource(R.color.transparent)
 
         WindowCompat.getInsetsController(window, window.decorView).apply {
             systemBarsBehavior =
@@ -115,10 +120,10 @@ class TitleScreenActivity : ComponentActivity() { // точка входа 2
 enum class AppDestinations(
     val icon: Int,
 ) {
-    SHOP(R.drawable.ic_favorite),
-    QUESTS(R.drawable.ic_favorite),
-    HOME(R.drawable.ic_home),
-    PROFILE(R.drawable.ic_account_box),
+    SHOP(furrylovers.finance_app.R.drawable.ic_favorite),
+    QUESTS(furrylovers.finance_app.R.drawable.ic_favorite),
+    HOME(furrylovers.finance_app.R.drawable.ic_home),
+    PROFILE(furrylovers.finance_app.R.drawable.ic_account_box),
 }
 
 @Composable
@@ -156,6 +161,12 @@ fun MainMenu(viewModel: GameViewModel) {
                     data = data,
                     onFinishDayClick = { food, care, mood ->
                         viewModel.finishDay(food, care, mood)
+                    },
+                    onLevel3Answer = { correct ->
+                        viewModel.completeLevel3Event(correct)
+                    },
+                    onLevel5Answer = { correct ->
+                        viewModel.completeLevel5Event(correct)
                     }
                 )
                 AppDestinations.PROFILE -> ProfileMenu(viewModel)
@@ -298,12 +309,38 @@ private fun BottomPanelButton(
 @Composable
 private fun MainMenuContent(
     data: Data,
-    onFinishDayClick: (food: Int, care: Int, mood: Int) -> Unit = { _, _, _ -> }
+    onFinishDayClick: (food: Int, care: Int, mood: Int) -> Unit = { _, _, _ -> },
+    onLevel3Answer: (Boolean) -> Unit = {},
+    onLevel5Answer: (Boolean) -> Unit = {}
 ) {
     var showFinishDayDialog by remember { mutableStateOf(data.lastFinishDayTime == 0L) }
 
-    val intervalMs = 5000L
-    //val intervalMs = 12 * 60 * 60 * 1000L // 12 часов в мс
+    val totalEarnedXp = data.quests
+        .filter { it.questStatus == QuestCategory.COMPLETED }
+        .sumOf { it.questAward } +
+        (if (data.level3EventCompleted) 300 else 0) +
+        (if (data.level5EventCompleted) 500 else 0)
+
+    val currentLevel = data.petStage + (totalEarnedXp / 300)
+
+    val showLevel3Event = currentLevel >= 3 && !data.level3EventShown
+    val showLevel5Event = currentLevel >= 5 && !data.level5EventShown
+
+    if (showLevel3Event) {
+        LevelEventDialog(
+            level = 3,
+            onDismiss = {},
+            onAnswer = { correct -> onLevel3Answer(correct) }
+        )
+    } else if (showLevel5Event) {
+        LevelEventDialog(
+            level = 5,
+            onDismiss = {},
+            onAnswer = { correct -> onLevel5Answer(correct) }
+        )
+    }
+
+    val intervalMs = DebugSettings.finishDayIntervalMs
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -330,7 +367,7 @@ private fun MainMenuContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(R.drawable.background),
+            painter = painterResource(furrylovers.finance_app.R.drawable.background),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -394,20 +431,20 @@ private fun MainMenuContent(
             }
         }
 
-        // Расчет уровня и динамического роста питомца (Ур 1-2: 0.62f, Ур 3-4: 0.80f, Ур 5+: 1.0f)
+        // Расчет уровня и динамического роста питомца
         val totalEarnedXp = data.quests
             .filter { it.questStatus == QuestCategory.COMPLETED }
             .sumOf { it.questAward }
         val currentLevel = data.petStage + (totalEarnedXp / 300)
 
         val petScale = when {
-            currentLevel <= 2 -> 0.62f
-            currentLevel in 3..4 -> 0.80f
-            else -> 1.0f
+            currentLevel <= 2 -> 0.90f
+            currentLevel in 3..4 -> 1.20f
+            else -> 1.50f
         }
 
         val animatedPetScale by animateFloatAsState(
-            targetValue = petScale,
+            targetValue = petScale * 1.8f,
             animationSpec = tween(durationMillis = 800),
             label = "petGrowthScale"
         )
@@ -420,8 +457,8 @@ private fun MainMenuContent(
             scale = petScale
         )
 
-        // Динамический вычет отступа для облачка в зависимости от роста питомца
-        val bubbleBottomPadding = (180.dp * animatedPetScale) + 140.dp
+        // Динамический отступ для облачка в зависимости от роста питомца
+        val bubbleBottomPadding = (160.dp * animatedPetScale) + 160.dp
 
         // Облачко с мыслями над персонажем
         if (thoughtMessages.isNotEmpty()) {
@@ -860,7 +897,9 @@ private fun ExperienceBar(
 ) {
     val totalEarnedXp = data.quests
         .filter { it.questStatus == QuestCategory.COMPLETED }
-        .sumOf { it.questAward }
+        .sumOf { it.questAward } +
+        (if (data.level3EventCompleted) 300 else 0) +
+        (if (data.level5EventCompleted) 500 else 0)
 
     val levelXpThreshold = 300
     val level = data.petStage + (totalEarnedXp / levelXpThreshold)
@@ -1139,7 +1178,7 @@ fun CharacterLayer(
     scale: Float = 1.0f
 ) {
     val animatedScale by animateFloatAsState(
-        targetValue = scale,
+        targetValue = scale * 1.8f,
         animationSpec = tween(durationMillis = 800),
         label = "characterScale"
     )
@@ -1152,14 +1191,153 @@ fun CharacterLayer(
             painter = painterResource(characters[characterType.coerceIn(0, characters.size - 1)]),
             contentDescription = null,
             modifier = Modifier
-                .size(620.dp)
-                .padding(end = 20.dp)
+                .size(500.dp)
                 .graphicsLayer {
                     scaleX = animatedScale
                     scaleY = animatedScale
                 },
             contentScale = ContentScale.Fit
         )
+    }
+}
+
+@Composable
+private fun LevelEventDialog(
+    level: Int,
+    onDismiss: () -> Unit,
+    onAnswer: (correct: Boolean) -> Unit
+) {
+    val isLevel3 = level == 3
+    val title = if (isLevel3) "🎉 Событие 3 уровня: Обед для питомца!" else "🏆 Событие 5 уровня: Домик мечты!"
+    val question = if (isLevel3) {
+        "Твой питомец просит премиальный корм за 120 монет, но в кошельке только 80 монет. В копилке отложено 100 монет. Сколько монет нужно взять из копилки, чтобы купить корм и сколько останется в копилке?"
+    } else {
+        "Загородный дом для питомца стоит 500 монет. Ты накопил 340 монет, а родители добавили в подарок ещё 50% от твоих накоплений. Хватит ли вам денег?"
+    }
+
+    val options = if (isLevel3) {
+        listOf(
+            "Взять 40 монет, останется 60 F" to true,
+            "Взять 50 монет, останется 50 F" to false,
+            "Взять 80 монет, останется 20 F" to false
+        )
+    } else {
+        listOf(
+            "Всего 510 монет — хватит на домик!" to true,
+            "Всего 450 монет — не хватит" to false,
+            "Всего 390 монет — не хватит" to false
+        )
+    }
+
+    var isCorrect by remember { mutableStateOf(false) }
+    var showExplanation by remember { mutableStateOf(false) }
+
+    val explanationText = if (isLevel3) {
+        "💡 Объяснение: 120 (цена корма) - 80 (в кошельке) = 40 монет нужно взять из копилки. 100 - 40 = 60 монет останется в копилке. Правильный ответ: взять 40, останется 60 F."
+    } else {
+        "💡 Объяснение: 50% от 340 = 170 монет. 340 + 170 = 510 монет. Так как 510 больше 500, денег хватает на покупку дома!"
+    }
+
+    Dialog(onDismissRequest = {}) {
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = AppCreamPanel),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkChocolate,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = question,
+                    fontSize = 13.sp,
+                    color = TextMediumBrown,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (!showExplanation) {
+                    options.forEach { (optionText, correct) ->
+                        Button(
+                            onClick = {
+                                isCorrect = correct
+                                showExplanation = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppCreamCapsule,
+                                contentColor = DarkChocolate
+                            )
+                        ) {
+                            Text(text = optionText, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center)
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isCorrect) NotificationSuccessBg else NotificationErrorBg)
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = if (isCorrect) "🎉 Правильно! +${if (isLevel3) 300 else 500} XP" else "❌ Неверно!",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isCorrect) NotificationSuccessText else NotificationErrorText
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = explanationText,
+                                fontSize = 12.sp,
+                                color = if (isCorrect) NotificationSuccessText else NotificationErrorText,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            onAnswer(isCorrect)
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BuyButtonGreen,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(text = "Продолжить", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1171,19 +1349,19 @@ enum class Parameters(
 ) {
     FULLNESS(
         "Сытость",
-        R.drawable.ic_favorite,
+        furrylovers.finance_app.R.drawable.ic_favorite,
         color = StatFoodOrange,
         strokeColor = StatFoodStroke
     ),
     GROOMED(
         "Уход",
-        R.drawable.ic_favorite,
+        furrylovers.finance_app.R.drawable.ic_favorite,
         color = StatCareTeal,
         strokeColor = StatCareStroke
     ),
     HAPPINESS(
         "Счастье",
-        R.drawable.ic_favorite,
+        furrylovers.finance_app.R.drawable.ic_favorite,
         color = StatHappinessPink,
         strokeColor = StatHappinessStroke
     ),
