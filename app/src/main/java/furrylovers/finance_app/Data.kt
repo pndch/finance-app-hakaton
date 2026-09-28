@@ -56,6 +56,7 @@ data class Data(
 
     var budget: MutableList<Int> = mutableListOf(0, 0, 0), // Еда, Уход, Настроение
     var expenses: MutableList<Int> = mutableListOf(0, 0, 0), // Еда, Уход, Настроение
+    var hasUnreadCompletedQuests: Boolean = false, // Непросмотренный красный кружочек на иконке квестов
 
     var goals: MutableList<Goal> = emptyList<Goal>().toMutableList(),
     var quests: MutableList<Quests> = questsItems.toMutableList()

@@ -165,6 +165,7 @@ fun MainMenu(viewModel: GameViewModel) {
         // Панель снизу — своя, не накрывает контент
         BottomPanel(
             currentDestination = currentDestination,
+            hasUnreadQuests = data.hasUnreadCompletedQuests,
             onDestinationChange = { targetDest ->
                 val targetIndex = destinations.indexOf(targetDest)
                 if (targetIndex >= 0) {
@@ -181,6 +182,7 @@ fun MainMenu(viewModel: GameViewModel) {
 @Composable
 private fun BottomPanel(
     currentDestination: AppDestinations,
+    hasUnreadQuests: Boolean = false,
     onDestinationChange: (AppDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -216,6 +218,7 @@ private fun BottomPanel(
                 BottomPanelButton(
                     destination = destination,
                     selected = selected,
+                    hasUnreadBadge = hasUnreadQuests,
                     onClick = { onDestinationChange(destination) },
                     activeBg = activeBg,
                     contentActive = contentActive,
@@ -231,6 +234,7 @@ private fun BottomPanel(
 private fun BottomPanelButton(
     destination: AppDestinations,
     selected: Boolean,
+    hasUnreadBadge: Boolean = false,
     onClick: () -> Unit,
     activeBg: Color,
     contentActive: Color,
@@ -259,12 +263,22 @@ private fun BottomPanelButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            painter = painterResource(destination.icon),
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(26.dp)
-        )
+        Box(contentAlignment = Alignment.TopEnd) {
+            Icon(
+                painter = painterResource(destination.icon),
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(26.dp)
+            )
+            if (destination == AppDestinations.QUESTS && hasUnreadBadge) {
+                Box(
+                    modifier = Modifier
+                        .size(9.dp)
+                        .clip(CircleShape)
+                        .background(Color.Red)
+                )
+            }
+        }
         Spacer(Modifier.height(4.dp))
         Text(
             text = when (destination) {
@@ -367,12 +381,57 @@ private fun MainMenuContent(
             )
         }
 
+        // Вычисление критических статов (< 5%)
+        val foodLow = data.petNeeds.getOrElse(0) { 50 } < 5
+        val careLow = data.petNeeds.getOrElse(1) { 50 } < 5
+        val moodLow = data.petNeeds.getOrElse(2) { 50 } < 5
+
+        val thoughtMessages = remember(foodLow, careLow, moodLow) {
+            mutableListOf<String>().apply {
+                if (foodLow) add("Хочу кушать! 🍎")
+                if (careLow) add("Мне нужен уход! 🧼")
+                if (moodLow) add("Мне очень грустно... 🥺")
+            }
+        }
+
+        // Расчет уровня и динамического роста питомца (Ур 1-2: 0.62f, Ур 3-4: 0.80f, Ур 5+: 1.0f)
+        val totalEarnedXp = data.quests
+            .filter { it.questStatus == QuestCategory.COMPLETED }
+            .sumOf { it.questAward }
+        val currentLevel = data.petStage + (totalEarnedXp / 300)
+
+        val petScale = when {
+            currentLevel <= 2 -> 0.62f
+            currentLevel in 3..4 -> 0.80f
+            else -> 1.0f
+        }
+
+        val animatedPetScale by animateFloatAsState(
+            targetValue = petScale,
+            animationSpec = tween(durationMillis = 800),
+            label = "petGrowthScale"
+        )
+
         CharacterLayer(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxSize(),
-            characterType = data.petType
+            characterType = data.petType,
+            scale = petScale
         )
+
+        // Динамический вычет отступа для облачка в зависимости от роста питомца
+        val bubbleBottomPadding = (180.dp * animatedPetScale) + 140.dp
+
+        // Облачко с мыслями над персонажем
+        if (thoughtMessages.isNotEmpty()) {
+            CharacterThoughtBubble(
+                messages = thoughtMessages,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(bottom = bubbleBottomPadding)
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -799,12 +858,14 @@ private fun ExperienceBar(
     data: Data,
     modifier: Modifier = Modifier
 ) {
-    val completedQuests = data.quests.count { it.questStatus == QuestCategory.COMPLETED }
-    val questsPerLevel = 3
-    val xpPerQuest = 100
-    val level = data.petStage + (completedQuests / questsPerLevel)
-    val currentXp = (completedQuests % questsPerLevel) * xpPerQuest
-    val maxXp = questsPerLevel * xpPerQuest
+    val totalEarnedXp = data.quests
+        .filter { it.questStatus == QuestCategory.COMPLETED }
+        .sumOf { it.questAward }
+
+    val levelXpThreshold = 300
+    val level = data.petStage + (totalEarnedXp / levelXpThreshold)
+    val currentXp = totalEarnedXp % levelXpThreshold
+    val maxXp = levelXpThreshold
     val progressFraction = (currentXp.toFloat() / maxXp.toFloat()).coerceIn(0f, 1f)
 
     val animatedProgress by animateFloatAsState(
@@ -910,6 +971,68 @@ private fun ExperienceBar(
 }
 
 @Composable
+private fun CharacterThoughtBubble(
+    messages: List<String>,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "bubbleFloat")
+    val offsetY by infiniteTransition.animateFloat(
+        initialValue = -6f,
+        targetValue = 6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "offsetY"
+    )
+
+    Column(
+        modifier = modifier.graphicsLayer { translationY = offsetY },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Card(
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.95f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                messages.forEach { msg ->
+                    Text(
+                        text = msg,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDarkBrown,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        // Хвостик облачка с мыслями
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.9f))
+        )
+        Spacer(modifier = Modifier.height(3.dp))
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.8f))
+        )
+    }
+}
+
+@Composable
 fun LiquidCircleProgress(
     parameters: Parameters,
     index: Int,
@@ -920,6 +1043,22 @@ fun LiquidCircleProgress(
     strokeWidth: Dp = 6.dp,
     animate: Boolean = false
 ) {
+    val isCritical = progress < 0.05f
+
+    val pulseTransition = rememberInfiniteTransition(label = "pulse_$index")
+    val pulseAlpha by pulseTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
+    val activeStrokeColor = if (isCritical) Color(0xFFE53935).copy(alpha = pulseAlpha) else strokeColor
+    val activeStrokeWidth = if (isCritical) 8.dp else strokeWidth
+
     val animated by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
         animationSpec = tween(durationMillis = if (animate) 600 else 0),
@@ -945,7 +1084,7 @@ fun LiquidCircleProgress(
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokePx = strokeWidth.toPx()
+            val strokePx = activeStrokeWidth.toPx()
             val radius = (size.minDimension - strokePx) / 2.3f
             val center = Offset(size.width / 2f, size.height / 2f)
 
@@ -960,7 +1099,7 @@ fun LiquidCircleProgress(
             }
 
             drawCircle(
-                color = strokeColor,
+                color = activeStrokeColor,
                 radius = radius,
                 center = center,
                 style = Stroke(width = strokePx)
@@ -972,33 +1111,53 @@ fun LiquidCircleProgress(
             contentDescription = parameters.label,
             modifier = Modifier.size(28.dp)
         )
+
+        if (isCritical) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE53935)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "!",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun CharacterLayer(modifier: Modifier = Modifier, characterType: Int) {
-    val idleTransition = rememberInfiniteTransition(label = "char_idle")
-
-    var actionTrigger by remember { mutableStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            val delayMs = Random.nextLong(8_000L, 15_000L)
-            delay(delayMs)
-            actionTrigger++
-        }
-    }
+fun CharacterLayer(
+    modifier: Modifier = Modifier,
+    characterType: Int,
+    scale: Float = 1.0f
+) {
+    val animatedScale by animateFloatAsState(
+        targetValue = scale,
+        animationSpec = tween(durationMillis = 800),
+        label = "characterScale"
+    )
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(characters[characterType]),
+            painter = painterResource(characters[characterType.coerceIn(0, characters.size - 1)]),
             contentDescription = null,
             modifier = Modifier
                 .size(620.dp)
-                .padding(end = 20.dp),
+                .padding(end = 20.dp)
+                .graphicsLayer {
+                    scaleX = animatedScale
+                    scaleY = animatedScale
+                },
             contentScale = ContentScale.Fit
         )
     }

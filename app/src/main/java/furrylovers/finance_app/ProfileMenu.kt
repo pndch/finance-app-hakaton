@@ -30,9 +30,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import furrylovers.finance_app.ui.theme.*
+import kotlin.math.round
 
 data class PiggyGoal(
     val id: Int,
@@ -94,13 +98,15 @@ fun ProfileMenuContent(
 
     var showDepositDialog by remember { mutableStateOf(false) }
 
-    // Расчёт уровня и опыта
-    val completedQuests = data.quests.count { it.questStatus == QuestCategory.COMPLETED }
-    val questsPerLevel = 3
-    val xpPerQuest = 100
-    val level = data.petStage + (completedQuests / questsPerLevel)
-    val currentXp = (completedQuests % questsPerLevel) * xpPerQuest
-    val maxXp = questsPerLevel * xpPerQuest
+    // Расчёт уровня и опыта на основе questAward выполненных квестов
+    val totalEarnedXp = data.quests
+        .filter { it.questStatus == QuestCategory.COMPLETED }
+        .sumOf { it.questAward }
+
+    val levelXpThreshold = 300
+    val level = data.petStage + (totalEarnedXp / levelXpThreshold)
+    val currentXp = totalEarnedXp % levelXpThreshold
+    val maxXp = levelXpThreshold
     val remainingXp = maxXp - currentXp
     val xpProgressFraction = (currentXp.toFloat() / maxXp.toFloat()).coerceIn(0f, 1f)
 
@@ -183,20 +189,46 @@ fun ProfileMenuContent(
                         color = DarkChocolate
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(DarkChocolate)
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "Уровень $level",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = CoinGold
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(DarkChocolate)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "Уровень $level",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = CoinGold
+                            )
+                        }
+
+                        val stageTitle = when {
+                            level <= 2 -> "Малыш 🍼"
+                            level in 3..4 -> "Юный экономист 📚"
+                            else -> "Финансист 💼"
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AppCreamCapsule)
+                                .border(1.dp, CoinGold, RoundedCornerShape(10.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = stageTitle,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkChocolate
+                            )
+                        }
                     }
                 }
             }
@@ -456,7 +488,8 @@ private fun DepositDialog(
     onConfirm: (amount: Int) -> Unit
 ) {
     val needed = (goalTarget - currentSaved).coerceAtLeast(0)
-    var selectedAmount by remember { mutableIntStateOf(50.coerceAtMost(currentBalance)) }
+    val maxDepositLimit = minOf(500, currentBalance)
+    var depositVal by remember { mutableFloatStateOf(0f) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -485,33 +518,67 @@ private fun DepositDialog(
                 Text(
                     text = "Баланс: $currentBalance F | Осталось до цели: $needed F",
                     fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = TextMediumBrown,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(CoinGold)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    listOf(50, 100, needed).distinct().filter { it > 0 }.forEach { amt ->
-                        val isSelected = selectedAmount == amt
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isSelected) DarkChocolate else AppCreamCapsule)
-                                .clickable { selectedAmount = amt }
-                                .padding(horizontal = 16.dp, vertical = 10.dp)
-                        ) {
-                            Text(
-                                text = "$amt F",
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSelected) CoinGold else DarkChocolate,
-                                fontSize = 14.sp
-                            )
-                        }
+                    Text(
+                        text = "Отложить: ${depositVal.toInt()} F",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DarkChocolate
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Слайдер пополнения копилки с верхней границей 500
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Сумма пополнения",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkChocolate
+                        )
+                        Text(
+                            text = "макс. 500 F",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextMediumBrown
+                        )
                     }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Slider(
+                        value = depositVal,
+                        onValueChange = {
+                            val maxAllowed = maxDepositLimit.toFloat()
+                            depositVal = (round(it / 25f) * 25f).coerceIn(0f, maxAllowed)
+                        },
+                        valueRange = 0f..500f,
+                        steps = 19,
+                        colors = SliderDefaults.colors(
+                            thumbColor = CoinGold,
+                            activeTrackColor = CoinGold,
+                            inactiveTrackColor = CoinGold.copy(alpha = 0.25f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -535,15 +602,17 @@ private fun DepositDialog(
                     }
 
                     Button(
-                        onClick = { onConfirm(selectedAmount) },
-                        enabled = currentBalance >= selectedAmount && selectedAmount > 0,
+                        onClick = { onConfirm(depositVal.toInt()) },
+                        enabled = depositVal > 0f && currentBalance >= depositVal.toInt(),
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp),
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BuyButtonGreen,
-                            contentColor = Color.White
+                            contentColor = Color.White,
+                            disabledContainerColor = Color.Gray.copy(alpha = 0.4f),
+                            disabledContentColor = Color.White.copy(alpha = 0.7f)
                         )
                     ) {
                         Text("Отложить", fontWeight = FontWeight.Bold)
