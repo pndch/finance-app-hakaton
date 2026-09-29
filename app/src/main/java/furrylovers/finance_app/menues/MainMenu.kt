@@ -87,7 +87,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import furrylovers.finance_app.data_save.Data
 import furrylovers.finance_app.data_save.DebugSettings
-import furrylovers.finance_app.viewmodel.GameViewModel
+import furrylovers.finance_app.viewmodel. GameViewModel
 import furrylovers.finance_app.quests.QuestCategory
 import furrylovers.finance_app.data_save.characters
 import furrylovers.finance_app.ui.theme.*
