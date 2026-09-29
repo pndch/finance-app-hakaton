@@ -1,6 +1,5 @@
 package furrylovers.finance_app.menues
 
-import android.R
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -85,9 +84,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import furrylovers.finance_app.R
 import furrylovers.finance_app.data_save.Data
 import furrylovers.finance_app.data_save.DebugSettings
-import furrylovers.finance_app.viewmodel. GameViewModel
+import furrylovers.finance_app.viewmodel.GameViewModel
 import furrylovers.finance_app.quests.QuestCategory
 import furrylovers.finance_app.data_save.characters
 import furrylovers.finance_app.ui.theme.*
@@ -101,7 +101,7 @@ class TitleScreenActivity : ComponentActivity() { // точка входа 2
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        window.setBackgroundDrawableResource(R.color.transparent)
+        window.setBackgroundDrawableResource(android.R.color.transparent)
 
         WindowCompat.getInsetsController(window, window.decorView).apply {
             systemBarsBehavior =
@@ -120,10 +120,10 @@ class TitleScreenActivity : ComponentActivity() { // точка входа 2
 enum class AppDestinations(
     val icon: Int,
 ) {
-    SHOP(furrylovers.finance_app.R.drawable.ic_favorite),
-    QUESTS(furrylovers.finance_app.R.drawable.ic_favorite),
-    HOME(furrylovers.finance_app.R.drawable.ic_home),
-    PROFILE(furrylovers.finance_app.R.drawable.ic_account_box),
+    SHOP(R.drawable.ic_shop),
+    QUESTS(R.drawable.ic_quest),
+    HOME(R.drawable.ic_home),
+    PROFILE(R.drawable.ic_account_box),
 }
 
 @Composable
@@ -311,9 +311,30 @@ private fun MainMenuContent(
     data: Data,
     onFinishDayClick: (food: Int, care: Int, mood: Int) -> Unit = { _, _, _ -> },
     onLevel3Answer: (Boolean) -> Unit = {},
-    onLevel5Answer: (Boolean) -> Unit = {}
+    onLevel5Answer: (Boolean) -> Unit = {},
+    onFinishTutorial: () -> Unit = {}
 ) {
-    var showFinishDayDialog by remember { mutableStateOf(data.lastFinishDayTime == 0L) }
+    var showTutorial by remember { mutableStateOf(!data.hasSeenTutorial) }
+    var showFinishDayDialog by remember { mutableStateOf(data.hasSeenTutorial && data.lastFinishDayTime == 0L) }
+
+    if (showTutorial) {
+        GameTutorialDialog(
+            onFinish = {
+                onFinishTutorial()
+                showTutorial = false
+                showFinishDayDialog = true
+            }
+        )
+    } else if (showFinishDayDialog) {
+        FinishDayDialog(
+            data = data,
+            onDismiss = { showFinishDayDialog = false },
+            onConfirm = { food, care, mood ->
+                onFinishDayClick(food, care, mood)
+                showFinishDayDialog = false
+            }
+        )
+    }
 
     val totalEarnedXp = data.quests
         .filter { it.questStatus == QuestCategory.COMPLETED }
@@ -367,7 +388,7 @@ private fun MainMenuContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(furrylovers.finance_app.R.drawable.background),
+            painter = painterResource(R.drawable.background),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -1349,22 +1370,193 @@ enum class Parameters(
 ) {
     FULLNESS(
         "Сытость",
-        furrylovers.finance_app.R.drawable.ic_favorite,
+        R.drawable.ic_food,
         color = StatFoodOrange,
         strokeColor = StatFoodStroke
     ),
     GROOMED(
         "Уход",
-        furrylovers.finance_app.R.drawable.ic_favorite,
+        R.drawable.ic_care,
         color = StatCareTeal,
         strokeColor = StatCareStroke
     ),
     HAPPINESS(
         "Счастье",
-        furrylovers.finance_app.R.drawable.ic_favorite,
+        R.drawable.ic_happiness,
         color = StatHappinessPink,
         strokeColor = StatHappinessStroke
     ),
+}
+
+data class TutorialStep(
+    val title: String,
+    val description: String,
+    val emoji: String,
+    val highlightTip: String
+)
+
+val tutorialSteps = listOf(
+    TutorialStep(
+        "Добро пожаловать!",
+        "Это твоя финансовая игра-тамагочи! Здесь ты будешь заботиться о питомце и учиться управлять деньгами.",
+        "👋",
+        "Твой питомец растет вместе с твоими финансовыми успехами!"
+    ),
+    TutorialStep(
+        "Параметры питомца",
+        "Справа вверху находятся 3 кружка: Сытость, Уход и Счастье. Следи, чтобы они не падали ниже 5%!",
+        "❤️",
+        "Покупай еду и средства ухода в Магазине, чтобы пополнять шкалы."
+    ),
+    TutorialStep(
+        "Завершение дня и Бюджет",
+        "Периодически нажимай кнопку «Завершить день» под питомцем. Она открывает планировщик бюджета: распределяй монеты на день, получай +100 монет и переходи на новый день!",
+        "✨",
+        "Следи за лимитом бюджета (Баланс + 100 F) и сравнивай план с фактом."
+    ),
+    TutorialStep(
+        "Магазин товаров",
+        "В Магазине можно покупать полезные товары для питомца. Каждая покупка автоматически записывается в категории расходов (Еда или Уход).",
+        "🛍️",
+        "Трать с умом и следи за своими финансовыми привычками."
+    ),
+    TutorialStep(
+        "Квесты и Задачки",
+        "Выполняй интересные квесты и финансовые задачки для школьников во вкладке «Квесты», чтобы зарабатывать опыт (XP) и продвигаться по уровню.",
+        "📜",
+        "Красный кружочек на иконке квестов подскажет, когда появится готовая награда!"
+    ),
+    TutorialStep(
+        "Профиль и Копилка",
+        "В Профиле ты можешь откладывать деньги в Копилку на заветные цели (от лежанки до загородного дома). При достижении цели питомец мгновенно получает уровень!",
+        "🐷",
+        "Пройди путь от Малыша до настоящего Финансиста. Удачи в игре!"
+    )
+)
+
+@Composable
+private fun GameTutorialDialog(
+    onFinish: () -> Unit
+) {
+    var currentStep by remember { mutableStateOf(0) }
+    val step = tutorialSteps[currentStep]
+
+    Dialog(onDismissRequest = {}) {
+        Card(
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = AppCreamPanel),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Шаг ${currentStep + 1} из ${tutorialSteps.size}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMediumBrown
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = step.emoji,
+                    fontSize = 48.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = step.title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkChocolate,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = step.description,
+                    fontSize = 13.sp,
+                    color = TextDarkBrown,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppCreamCapsule)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "💡 ${step.highlightTip}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DarkChocolate,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (currentStep > 0) {
+                        Button(
+                            onClick = { currentStep-- },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppCreamCapsule,
+                                contentColor = TextMediumBrown
+                            )
+                        ) {
+                            Text("Назад", fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            if (currentStep < tutorialSteps.size - 1) {
+                                currentStep++
+                            } else {
+                                onFinish()
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BuyButtonGreen,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = if (currentStep < tutorialSteps.size - 1) "Далее ➔" else "Начать игру 🎉",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true, device = Devices.PIXEL_9)

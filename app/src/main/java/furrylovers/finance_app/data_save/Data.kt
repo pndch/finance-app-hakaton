@@ -30,6 +30,7 @@ data class Goal(
 @Serializable
 data class Data(
     var firstStart: Boolean = true,
+    var hasSeenTutorial: Boolean = false,
 
     var petName: String = "PetName",
     var petType: Int = 0,

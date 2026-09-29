@@ -53,6 +53,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun finishTutorial() {
+        val newData = _data.value.copy(hasSeenTutorial = true, firstStart = false)
+        _data.value = newData
+        saver.saveData(newData)
+    }
+
     fun solvePuzzleQuest(questId: Int, selectedAnswer: String): Boolean {
         val currentQuest = _data.value.quests.find { it.id == questId } ?: return false
         if (currentQuest.correctAnswer == selectedAnswer) {
@@ -231,5 +237,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             level5EventCompleted = correct,
             questCompleted = if (correct) d.questCompleted + 5 else d.questCompleted
         )
+    }
+
+    fun finishFirstStart() = update { d ->
+        d.copy(firstStart = false)
     }
 }
